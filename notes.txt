@@ -1,0 +1,30 @@
+[November 17 2019]
+deffinitions:
+	Opearator Overloading = having 2 functions with the same name but that behave differently depending on the number of arguments.(Polymorphism)
+	
+	"if __name__ = __main__" = Python checks for the values of certain variables before it runs the code. If "__name__ = __main__" = True, then the file is ran as the main file and not as an import.
+
+	operator overriding = Rewriting the already defined dunder/magical methods of the python library so they operate in the manner that they are overwritten.
+
+	SSL (Secure Sockets Layer) = cryptographic protocol to provide scurity over the internet communication. 
+
+	TLS (Transport Layer Security) = criptographic protocols to provide communication between computers in the same network.
+
+	IP address = It is an identifier for a computer on a TCP/IP network. It is made up of 2 parts. 1. The identifier of network and 2. the identifier of the node/host.
+
+	Status codes =  [100,199] = Informational responses. [200, 299] = Success response. [300, 399] = Redirection. [400, 499] = CLient errors. [500, 599] = Server errors. 
+
+
+[November 19 2019]
+
+	Rainbow table = table with the most known usernames and password.
+
+	packet sniffer = utility that analyses and may inject tasks into the data sctream traveling over the network.
+
+	URL structure = www.mollysbarkandwine.com where: www = Subdomain (Used to organize a website into different sections e.g News, Info, Careers, languages e.t.c), mollysbarkandwine = second level domain and com = Top level domain.
+
+	"Who is" Command = Allows to find a domain name from the server IP address.
+
+[Tooling]
+	Nmap = Tools that allows to footprint
+	
