@@ -1,2 +1,2 @@
-#!/bin/bash
-sudo systemctl restart bluetooth
+How to start the juice shop:
+nmp start

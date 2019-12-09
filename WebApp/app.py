@@ -14,7 +14,6 @@ class Todo(db.Model):
     def __repr__(self):
         return '<Task %r>' % self.id
 
-
 @app.route('/', methods=['POST', 'GET'])
 def index():
     if request.method == 'POST':
@@ -28,7 +27,7 @@ def index():
         except:
             return 'There was an issue adding your task'
 
-    else:
+    if request.method == 'GET':
         tasks = Todo.query.order_by(Todo.date_created).all()
         return render_template('index.html', tasks=tasks)
 
@@ -59,6 +58,13 @@ def update(id):
 
     else:
         return render_template('update.html', task=task)
+
+# creating another page depending on the path and method provided!. 
+# it has not been linked to a seperate html file yet!. 
+@app.route('/upload/', methods=['GET'])
+def upload():
+	if request.method == 'GET':
+		return redirect('hello')
 
 
 if __name__ == "__main__":
