@@ -4,9 +4,10 @@
 	<title> Regression </title>
 </head>
 <body>
-	<h1> This is the stock regression test </h1>
-	{% if stock_key %}
-	<h1> you have chosen to analyse {{stock_key}} </h1>
-	{% endif %}
+	<h1>Upload new File</h1>
+    <form method=post enctype=multipart/form-data>
+      <input type=file name=file>
+      <input type=submit value=Upload>
+    </form>
 </body>
 </html>
