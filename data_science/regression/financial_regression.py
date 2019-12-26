@@ -3,6 +3,8 @@
 # Label = output
 # abnormal = peace of information far from the avrage and likley 
 # not used to estimations.
+# index (subset selection) =  selecting particular rows or/and 
+# columns of data from a data frame
 
 # for each epoch
 #     for each training data instance
@@ -22,14 +24,17 @@
 # set that has not been shown to the network before, or at least the network hasn't trained 
 # on it. 
 # Testing Set: this data set is used only for testing the final solution in order to confirm the actual predictive power of the network.
+# pickling = serialization of any data object. In this case it will be used to save the clisifier, so it does not need 
+# to be built everytime it runs. It works just like a file
 
 import quandl, math, datetime
-import matplotlib as plt
+import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn import preprocessing, svm
 from sklearn.linear_model import LinearRegression
+import pickle
 
 
 df = quandl.get('WIKI/GOOGL')
@@ -89,6 +94,7 @@ X = preprocessing.scale(X)
 print('This is array X but after being normalized')
 print(X)
 
+
 # 
 X = X[:-forecast_out]
 print('taking the last # (forecast_out) of rows for all columns')
@@ -112,19 +118,28 @@ print('This is array y with only column label')
 # this line 
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
 
-print('This is X train and X train')
+print('This is X train and X train (array type)')
 print(X_train)
 print(X_test)
 
 # choose the algorithm. The algorithm is a class. Documentation for each 
 # algorithm can be found in sklearn
-clf = LinearRegression(n_jobs = 1)
-# fit = train
-clf.fit(X_train, y_train)
+# clf = LinearRegression(n_jobs = 1)
+# # fit = train
+# clf.fit(X_train, y_train)
+
+# with open('linearRegression.pickle', 'wb') as f:
+# 	pickle.dump(clf, f)
+
+pickle_in = open('linearRegression.pickle', 'rb')
+clf = pickle.load(pickle_in)
+
+
 # score = test
 accuracy = clf.score(X_test, y_test)
 
 print(accuracy)
+
 
 forecast_set = clf.predict(X_lateley)
 
@@ -133,15 +148,22 @@ print(forecast_set, accuracy, forecast_out)
 
 df['forecast'] = np.nan
 
+# We take the last date from the data frame, convert it to linux time
+# and add 8640 which equals a day in unix units. 
 last_date = df.iloc[-1].name
-
 last_unix = last_date.timestamp()
-
 one_day = 8640
-
 next_unix = last_unix + one_day
 
+# This loop is for adding the dates into the graph
 for i in forecast_set:
 	next_date = datetime.datetime.fromtimestamp(next_unix)
 	next_unix += one_day
 	df.loc[next_date] = [np.nan for _ in range(len(df.columns)-1)] + [i]
+
+df['Adj. Close'].plot()
+df['forecast'].plot()
+plt.legend(loc=4)
+plt.xlabel('Date')
+plt.ylabel('Price')
+plt.show()
