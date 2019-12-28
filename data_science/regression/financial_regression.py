@@ -125,7 +125,7 @@ print(X_test)
 # choose the algorithm. The algorithm is a class. Documentation for each 
 # algorithm can be found in sklearn
 # clf = LinearRegression(n_jobs = 1)
-# # fit = train
+# # fit = trainingn
 # clf.fit(X_train, y_train)
 
 # with open('linearRegression.pickle', 'wb') as f:
