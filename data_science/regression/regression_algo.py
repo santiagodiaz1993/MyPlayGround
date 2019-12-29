@@ -8,13 +8,33 @@ from statistics import mean
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import style
+import random
 
 # choose style
 style.use('fivethirtyeight')
 
 
-xs = np.array([1, 2, 3, 4, 5, 6], dtype=np.float64)
-ys = np.array([5, 4, 6, 5, 6, 7], dtype=np.float64)
+# xs = np.array([1, 2, 3, 4, 5, 6], dtype=np.float64)
+# ys = np.array([5, 4, 6, 5, 6, 7], dtype=np.float64)
+
+# hm = how much 
+# variance = how much difference between data points 
+# step = how far on avrage to step up the y value per point
+# correlation = positive or negative coorelation
+def create_dataset(hm, variance, step=2, correlation=False):
+    val = 1 
+    ys = []
+    for i in range(hm):
+        y = val + random.randrange(-variance, variance)
+        ys.append(y)
+        if correlation and correlation == 'pos':
+            val+=step
+        elif correlation and correlation == 'neg':
+            val -= step
+    xs = [i for i in range(len(ys))]
+    return np.array(xs, dtype=np.float64), np.array(ys, dtype=np.float64)
+
+xs, ys = create_dataset(40, 5, 2, correlation='pos')
 
 def best_fit_slopeand_intercept(xs, ys):
 	"""function that returns the slope and b values 
@@ -80,7 +100,12 @@ def ceofficient_of_determination(ys_orig, ys_regression_line):
 	squared_error_y_mean = squared_error(ys_orig, y_mean_line)
 	return 1 - (square_error_regression_line/squared_error_y_mean)
 
+
 r_squared = ceofficient_of_determination(ys, regression_line)
 
 print('The coeficient of determination is')
 print(r_squared)
+
+
+
+
