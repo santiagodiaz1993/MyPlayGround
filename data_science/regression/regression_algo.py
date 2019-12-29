@@ -1,5 +1,7 @@
-"""Manually finding the best fit line given a range 
-of x and y values"""
+""" ** Best fit line **
+Manually finding the best fit line given a range 
+of x and y values and predicting y values given x
+vlaues and graphing them"""
 
 
 from statistics import mean
@@ -48,3 +50,37 @@ plt.scatter(xs, ys)
 plt.plot(xs, regression_line)
 plt.plot(xs2, ys2)
 plt.show()
+
+
+
+""" ** R Squared Theory ** 
+Coefficient of determination is calculated using the squared 
+error. We answer the question how good of a fit is the line?
+error = distance from point to line squared 
+
+if r**2 is small this means the data is pretty linear. (All 
+points are near the line)
+
+SE = squared error
+r**2 = coefficient of determination
+r**2 = 1 - SE*line(y)/SE*mean(y)
+
+coefficient of determination = confidence of the line
+"""
+
+
+def squared_error(ys_orig, ys_regression_line):
+	"""function returns the distance from each y value to the 
+	line"""
+	return sum((ys_orig - ys_regression_line)**2)
+
+def ceofficient_of_determination(ys_orig, ys_regression_line):
+	y_mean_line = [mean(ys_orig) for y in ys_orig]
+	square_error_regression_line = squared_error(ys_orig, ys_regression_line) 
+	squared_error_y_mean = squared_error(ys_orig, y_mean_line)
+	return 1 - (square_error_regression_line/squared_error_y_mean)
+
+r_squared = ceofficient_of_determination(ys, regression_line)
+
+print('The coeficient of determination is')
+print(r_squared)
