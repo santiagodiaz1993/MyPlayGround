@@ -25,5 +25,38 @@ k nearest nightboors is not very good for scaling. Estimations can also be done 
 
 most macine learning algorithms want a category to be a number that represents a type.
 """
+# before importing the file I first added column names 
 
+import numpy as np 
+from sklearn import preprocessing, neighbors
+from sklearn.model_selection import train_test_split
+import pandas as pd
 
+# first lets clean up import, format and extract the information
+
+df = pd.read_csv('breast-cancer.data')
+print('This is the data set just imported and untouched')
+print(df)
+
+df.replace('?', -999999, inplace=True)
+df.drop(['id'], 1, inplace=True)
+
+# Making both of the arrays out of the dataframe
+
+X = np.array(df.drop(['class'], 1))
+y = np.array(df['class'])
+             
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
+
+clf = neighbors.KNeighborsClassifier()
+clf.fit(X_train, y_train)
+
+accuracy = clf.score(X_test, y_test)
+
+print(accuracy)  
+
+example_measures = np.array([4, 2, 1, 1, 1, 2, 3, 2, 1])
+example_measures = example_measures.reshape(1, -1)
+
+prediction = clf.predict(example_measures)
+print(prediction)
