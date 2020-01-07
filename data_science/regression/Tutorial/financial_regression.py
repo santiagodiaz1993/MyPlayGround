@@ -124,15 +124,15 @@ print(X_test)
 
 # choose the algorithm. The algorithm is a class. Documentation for each 
 # algorithm can be found in sklearn
-# clf = LinearRegression(n_jobs = 1)
-# # fit = trainingn
-# clf.fit(X_train, y_train)
+clf = LinearRegression(n_jobs = 1)
+# fit = trainingn
+clf.fit(X_train, y_train)
 
 # with open('linearRegression.pickle', 'wb') as f:
 # 	pickle.dump(clf, f)
 
-pickle_in = open('linearRegression.pickle', 'rb')
-clf = pickle.load(pickle_in)
+# pickle_in = open('linearRegression.pickle', 'rb')
+# clf = pickle.load(pickle_in)
 
 
 # score = test
@@ -160,6 +160,8 @@ for i in forecast_set:
 	next_date = datetime.datetime.fromtimestamp(next_unix)
 	next_unix += one_day
 	df.loc[next_date] = [np.nan for _ in range(len(df.columns)-1)] + [i]
+print('this is the one column framework')
+print(df['Adj. Close'])
 
 df['Adj. Close'].plot()
 df['forecast'].plot()

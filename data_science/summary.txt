@@ -1,0 +1,2 @@
+Linear Regression: Using the equations of a line to predict values in the future using the most meaningful characterisitcs possible.
+K nearest Neightbors: Classify a given point by finding how distant it is from two or more groups. The data point will inherit the attribute from the closses group. K = number of points to find attribute.
