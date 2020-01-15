@@ -1,13 +1,23 @@
 '''
+LINEAR REGRESSION MINI-PROJECT
+
 Questions we want to answer:
    What is the price in the future?
 Steps we need to take:
-Lable the information [done]
-Inspect information and get most important attributes
-Drop none significant information
+1. Clean all of the data that have missing cells. For this I
+decided to drop all rows with missing values
+2. Graph all data against the price to see what are the
+factors that have the most interaction.
+3. Replace all none numeric values in cell with numeric values.
+for this I used a dictionary.
+4. Randomized all data and selected a training and testing set. 
+The testing set is 20% of the values out of the total values 
+after dropping the rows in step 1.
+5. I trained and tested the model. It has an accuracy of 77%. 
+I decided to use all of the features avaliable.
 
 note: A good pactice is to fill values with the avrage of the column. 
-This will need to be done where the values are ?'
+However, I did not do that in this excercise. 
 '''''
 
 import pandas as pd 
@@ -18,6 +28,7 @@ import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression
 import math
+import pickle
 
 df = pd.read_csv('imports-85.data')
 
@@ -109,13 +120,12 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
 
 clf = LinearRegression()
 clf.fit(X_train, y_train)
+with open('linearregression.pickle', 'wb') as f:
+    pickle.dump(clf, f)
+   
+pickle_in = open('linearregression.pickle', 'rb')
+clf = pickle.load(pickle_in)
+
 accuracy = clf.score(X_test, y_test)
 print(accuracy)
-
-#plt.scatter(dfe, y)
-plt.title('Price vs highway mpg')
-plt.xlabel('Symboling')
-plt.ylabel('Price')
-# plt.show()
-
 
