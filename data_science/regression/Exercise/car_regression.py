@@ -40,16 +40,16 @@ df = df[df.stroke != '?']
 df = df[df.horsepower != '?']
 df = df[df.peak_rpm != '?']
 
-print('This is the dataframe with all of the data cleaned')
-print('The rows with missing values were dropped')
-print(df)
+# print('This is the dataframe with all of the data cleaned')
+# print('The rows with missing values were dropped')
+# print(df)
 
 ''' Look for interaction between all factors against price '''
 y = df['price']
 y = pd.to_numeric(y)
 y = np.array(y)
-print('This will be the label')
-print(y)
+# print('This will be the label')
+# print(y)
 
 for factor in df:
     colum_X = df[factor].sort_values(ascending=True)
@@ -59,13 +59,13 @@ for factor in df:
     plt.scatter(colum_X, y)
     # plt.show()
 
-print(df)
+# print(df)
 ''' Pick all factors that will be used to predict the car's price based on the interaction
 from all of the factors'''
 
 X = df.drop(['price'], 1)
-print('These will be the features')
-print(X)
+# print('These will be the features')
+# print(X)
 
 ''' Now sample, randomize, experiment, train, test and create the model '''
 
@@ -101,31 +101,65 @@ X['aspiration'] = X.aspiration.map({'std':0, 'turbo':1})
 
 X['num_of_doors'] = X.num_of_doors.map({'four':0, 'two':1})
 
-X['body_style'] = X.body_style.map({'hardtop':0, 'wagon':1, 'sedan':2, 'hatchback':3, 'convertible':4})
+X['body_style'] = X.body_style.map({'hardtop':0, 
+                                    'wagon':1, 
+                                    'sedan':2, 
+                                    'hatchback':3, 
+                                    'convertible':4})
 
 X['drive_wheels'] = X.drive_wheels.map({'4wd':0, 'fwd':1, 'rwd': 2})
 
 X['engine_location'] = X.engine_location.map({'front':0, 'rear':1})
 
-X['engine_type'] = X.engine_type.map({'dohc':0, 'dohcv':1, 'l':2, 'ohc':3, 'ohcf': 4, 'ohcv':5, 'rotor': 6})
+X['engine_type'] = X.engine_type.map({'dohc':0, 
+                                      'dohcv':1, 
+                                      'l':2, 
+                                      'ohc':3, 
+                                      'ohcf': 4, 
+                                      'ohcv':5, 
+                                      'rotor': 6})
 
-X['num_of_cylinders'] = X.num_of_cylinders.map({'eight':0, 'five':1, 'four':2, 'six':3, 'three':4, 'twelve':6, 'two': 7})
+X['num_of_cylinders'] = X.num_of_cylinders.map({'eight':0, 
+                                                'five':1, 
+                                                'four':2, 
+                                                'six':3, 
+                                                'three':4, 
+                                                'twelve':6, 
+                                                'two': 7})
 
-X['fuel_system'] = X.fuel_system.map({'1bbl':0, '2bbl':1, '4bbl':2, 'idi':3, 'mfi':4, 'mpfi': 5, 'spdi':6, 'spfi': 7})
+X['fuel_system'] = X.fuel_system.map({'1bbl':0, 
+                                      '2bbl':1, 
+                                      '4bbl':2, 
+                                      'idi':3, 
+                                      'mfi':4, 
+                                      'mpfi': 5, 
+                                      'spdi':6, 
+                                      'spfi': 7})
 
-print('This is the data frame with all variables converted to numerical values')
-print(X)
+# print('This is the data frame with all variables converted to numerical values')
+# print(X)
 
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
 
-clf = LinearRegression()
-clf.fit(X_train, y_train)
-with open('linearregression.pickle', 'wb') as f:
-    pickle.dump(clf, f)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.5)
+
+# clf = LinearRegression()
+# clf.fit(X_train, y_train)
+# with open('linearregression.pickle', 'wb') as f:
+#     pickle.dump(clf, f)
    
 pickle_in = open('linearregression.pickle', 'rb')
 clf = pickle.load(pickle_in)
 
 accuracy = clf.score(X_test, y_test)
-print(accuracy)
+print('The accuracy of this model is:')
+print(str(accuracy) + '%')
 
+''' Using the model to predict the price of a car '''
+personal_car = [[-2, 68, 4, 0, 0, 0, 0, 0, 0, 100, 145, 68, 50, 1500, 3, 0, 69, 3, 2.54, 2.08, 14, 50, 4180, 14, 18]]
+personal_car = np.array(personal_car)
+personal_car = personal_car.reshape(1, -1)
+
+price_estimation = clf.predict(personal_car)
+
+print('This is the price estimation given your personal_car input:')
+print(price_estimation)
