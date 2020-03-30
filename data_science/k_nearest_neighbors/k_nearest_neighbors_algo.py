@@ -69,11 +69,11 @@ plt.scatter(new_feature[0], new_feature[1])
 df = pd.read_csv('breast-cancer.data')
 df.replace('?', -9999, inplace=True)
 df.drop(['id'], 1, inplace=True)
+print(df)
 full_data = df.astype(float).values.tolist()
-
-print(full_data[:10])
 random.shuffle(full_data)
-print(20*'#')
-print(full_data[:5])
+
+train_size = 0.2
+train_set =
 
 
