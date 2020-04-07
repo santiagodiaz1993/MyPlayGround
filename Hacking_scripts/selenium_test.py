@@ -1,10 +1,11 @@
 """This script tests the ability of a user to upload their resume after filling up the 
-application page.
+job application page.
 
-Fature: The job application page should allow users to submit their resume through a i
+Feature: The job application page should allow users to submit their resume through a
 upload pop up box
 
-Scenario:Resume should uploaded when the user fills up all requiered fields a
+Scenario: User should be able to upload their resume once they have populated all the
+required information
 
 
  Given: I am on Qualitest's home page 
