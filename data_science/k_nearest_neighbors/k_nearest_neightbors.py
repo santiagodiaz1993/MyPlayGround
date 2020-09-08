@@ -32,7 +32,6 @@ random sample from a population.
 import numpy as np
 import pandas as pd
 import pickle
-from sklearn import preprocessing, neighbors
 from sklearn.model_selection import train_test_split
 
 df = pd.read_csv("breast-cancer.data")

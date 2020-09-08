@@ -61,12 +61,10 @@ def k_nearest_neighbors(data, predict, k=3):
             distances.append([euclidean_distance, group])
 
     votes = [i[1] for i in sorted(distances)[:k]]
-    print("This is voting")
-    print(votes)
-    print(Counter(votes).most_common(1))
     vote_result = Counter(votes).most_common(1)[0][0]
-    print(vote_result)
-    return vote_result
+    confidence = Counter(votes).most_common(1)[0][1] / k
+    print(vote_result, confidence)
+    return vote_result, confidence
 
 
 # result = k_nearest_neighbors(dataset, new_feature, k=7)
@@ -109,17 +107,15 @@ correct = 0
 total = 0
 
 for i in train_data:
-    print(train_set[i[-1]].append(i[:-1]))
     train_set[i[-1]].append(i[:-1])
 
 
 for i in test_data:
-    print(test_set[i[-1]].append(i[:-1]))
     test_set[i[-1]].append(i[:-1])
 
 for group in test_set:
     for data in test_set[group]:
-        vote = k_nearest_neighbors(train_set, data, k=5)
+        vote, confidence = k_nearest_neighbors(train_set, data, k=49)
         if group == vote:
             correct += 1
         total += 1

