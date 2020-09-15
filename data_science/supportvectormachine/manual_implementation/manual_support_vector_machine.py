@@ -84,6 +84,11 @@ class SupportVectorMachine:
             self.b = opt_choice[1]
             latest_optimum = opt_choice[0][0] + step * 2
 
+        for i in self.data:
+            for xi in self.data:
+                yi = i
+                print(xi, ":", yi * (np.dot(self.w, xi) + self.b))
+
     def predict(self, features):
         # sign( x.w+b)
         classification = np.sign(np.dot(np.array(features), self.w) + self.b)
@@ -148,4 +153,20 @@ data_dict = {
 
 svm = SupportVectorMachine()
 svm.fit(data=data_dict)
+
+predict_us = [
+    [0, 10],
+    [1, 3],
+    [3, 4],
+    [3, 5],
+    [5, 5],
+    [5, 6],
+    [6, -5],
+    [5, 8],
+    [5, 8],
+]
+
+for p in predict_us:
+    svm.predict(p)
+
 svm.visualize()
