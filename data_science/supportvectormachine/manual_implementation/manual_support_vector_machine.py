@@ -12,26 +12,57 @@ style.use("ggplot")
 class SupportVectorMachine:
     def __init__(self, visualization=True):
         self.visualization = visualization
+
+        # these are the colors for the two lines
         self.colors = {1: "r", -1: "b"}
+
+        # unless false is set when the an object is initialized
+        # create a new figure and assign this figure to the attribute fig
+        # and add the sub plut in the locatio 1,1,1 in for format
+        # nrows, ncols, index
         if self.visualization:
             self.fig = plt.figure()
             self.ax = self.fig.add_subplot(1, 1, 1)
 
     def fit(self, data):
+        # self data will store he data that will be passsed through the
+        # SVM
         self.data = data
+
         # { ||w||: [w, b]}
         opt_dict = {}
+
+        # this is the transformation matric for trying all possible
+        # conbinations
         transform = [[1, 1], [-1, 1], [-1, -1], [1, -1]]
 
         all_data = []
+        # in this loop we are extracting the features into an array
         for yi in self.data:
+            print("what yi represents in data")
+            print(yi)
             for featureset in self.data[yi]:
+                print("what featurset represents in data")
+                print(featureset)
                 for feature in featureset:
+                    print(10 * "#")
+                    print("what feature represents in featureset")
+                    print(feature)
                     all_data.append(feature)
+                    print(
+                        "this is the final list of features that were appended"
+                    )
+                    print(all_data)
+        # then we gab the maxminum and minimum value from all features and then
+        # we set it to none
         self.max_feature_value = max(all_data)
         self.min_feature_value = min(all_data)
         all_data = None
 
+        # we create an array with the max feature value and multiply it by
+        # .1, .01, and .001. These values represent the the size of the
+        # steps that will be taking. The smaller the steps the more times
+        # that it will be needed to take
         # support vectors yi(xi,w+b) = 1
         step_sizes = [
             self.max_feature_value * 0.1,
@@ -45,19 +76,43 @@ class SupportVectorMachine:
         b_range_multiple = 5
         b_multiple = 5
         latest_optimum = self.max_feature_value * 10
+        # for max value in the step size array
         for step in step_sizes:
+            # w = an np array with the lates optimum twice
             w = np.array([latest_optimum, latest_optimum])
-            # we can do this because convex
+            # set optimized to equal false
             optimized = False
-
+            # start iterating until optimized gets flipped to false
             while not optimized:
+                # arrange is similar to the function range in python. It
+                # returns a list created by given parameters arrange
                 for b in np.arange(
                     -1 * (self.max_feature_value * b_range_multiple),
                     self.max_feature_value * b_range_multiple,
                     step * b_multiple,
                 ):
+                    print(10 * "_")
+                    print(
+                        "This is the np range that we are iterating through "
+                    )
+                    print(
+                        np.arange(
+                            -1 * (self.max_feature_value * b_range_multiple),
+                            self.max_feature_value * b_range_multiple,
+                            step * b_multiple,
+                        )
+                    )
+                    print(b)
+                        "This is every element of the array created by ranges"
+                    )
+                    print(b)
                     for transformation in transform:
+                        print("this is each transofrmation in transform array")
+                        print(
+                            "w_t = array with the latest optimum twice times the transormation array"
+                        )
                         w_t = w * transformation
+                        print(w_t)
                         found_options = True
                         # weakest link in the SCM findamentally SMO attempts
                         # to fix this a bit
@@ -66,6 +121,11 @@ class SupportVectorMachine:
                             for xi in self.data[i]:
                                 yi = i
                                 if not yi * (np.dot(w_t, xi) + b) >= 1:
+                                    print(40 * "#")
+                                    print(
+                                        "this is the values that has to be greater than one"
+                                    )
+                                    print(yi * (np.dot(w_t, xi) + b))
                                     found_options = False
 
                     if found_options:
