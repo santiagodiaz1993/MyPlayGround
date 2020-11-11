@@ -5,15 +5,15 @@
 import matplotlib.pyplot as plt
 from matplotlib import style
 import numpy as np
-from sklearn.cluster import KMeans
+from sklearn.cluster import MeanShift
 from sklearn import preprocessing
 import pandas as pd
 
 df = pd.read_excel("titanic.xls")
-print(df)
+original_df = pd.DataFrame.copy(df)
 
 df.drop(["body", "name"], 1, inplace=True)
-# df.apply(pd.to_numeric, errors="ignore")
+
 for c in df.columns.values:
     df[c] = pd.to_numeric(df[c], errors="ignore")
 df.fillna(0, inplace=True)
@@ -48,14 +48,24 @@ x_data = np.array(df.drop(["survived", "pclass"], 1).astype(float))
 x_data = preprocessing.scale(x_data)
 y_data = np.array(df["survived"])
 
-clf = KMeans(n_clusters=2)
+clf = MeanShift()
 clf.fit(x_data)
 
-correct = 0
+labels = clf.lables_
+cluster_centers = clf.cluster_centers_
+
+original_df["cluster_group"] = np.nan
+
 for i in range(len(x_data)):
-    predict_me = np.array(x_data[i].astype(float))
-    predict_me = predict_me.reshape(-1, len(predict_me))
-    prediction = clf.predict(predict_me)
-    if prediction[0] == y_data[i]:
-        correct += 1
-print(correct / len(x_data))
+    original_df["cluster_group"].iloc[i] = labels[i]
+
+survival_rates = {}
+n_clusters_ = len(np.unique(labels))
+
+for i in range(n_clusters_):
+    temp_df = original_df[(original_df["cluster_group"] == float(i))]
+    survival_cluster = temp_df[(temp_df["survived"] == 1)]
+    survival_rate = len(survival_cluster) / len(temp_df)
+    survival_rates[i] = survival_rate
+
+print(survival_rates)
