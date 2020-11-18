@@ -51,7 +51,7 @@ y_data = np.array(df["survived"])
 clf = MeanShift()
 clf.fit(x_data)
 
-labels = clf.lables_
+labels = clf.labels_
 cluster_centers = clf.cluster_centers_
 
 original_df["cluster_group"] = np.nan
