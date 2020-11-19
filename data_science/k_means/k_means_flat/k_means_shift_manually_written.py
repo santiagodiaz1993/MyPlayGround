@@ -54,10 +54,10 @@ class Means_shift:
                     distance = np.linalg.norm(featureset - centroid)
                     if distance == 0:
                         distance = 0.00001
-                    wreight_index = int(distance / self.radius)
-                    if wreight_index > self.radius_norm_step - 1:
-                        wreight_index = self.radius_norm_step - 1
-                    to_add = (weights[wreight_index] ** 2) * [featureset]
+                    weight_index = int(distance / self.radius)
+                    if weight_index > self.radius_norm_step - 1:
+                        weight_index = self.radius_norm_step - 1
+                    to_add = (weights[weight_index] ** 2) * [featureset]
                     in_bandwith += to_add
 
                 new_centroid = np.average(in_bandwith, axis=0)
@@ -65,6 +65,7 @@ class Means_shift:
 
             uniques = sorted(list(set(new_centroids)))
 
+            # uniques depend on to pop
             to_pop = []
 
             for i in uniques:
@@ -73,13 +74,12 @@ class Means_shift:
                         pass
                     elif (
                         np.linalg.norm(np.array(i) - np.array(ii))
-                        >= -self.radius
+                        <= -self.radius
                     ):
                         to_pop.append(ii)
                         break
 
             for i in to_pop:
-
                 try:
                     uniques.remove(i)
                 except:
@@ -88,27 +88,23 @@ class Means_shift:
             prev_centroids = dict(centroids)
 
             centroids = {}
-
-            print(len(uniques))
-
             for i in range(len(uniques)):
-                print(i)
-                print("we are in the unquest loop")
+                # centroids is build from the uniques
                 centroids[i] = np.array(uniques[i])
                 optimized = True
 
-                for i in centroids:
-                    if not np.array_equal(centroids[i], prev_centroids[i]):
-                        print("the equstion is not")
-                        optimized = False
-                    if not optimized:
-                        print("we set optimized to true")
-                        break
-                if optimized:
-                    print("optimized has been confirmed to be true")
+            for i in centroids:
+                # never gonna be optimized unless cetroid and prev centroids
+                # are the same
+                if not np.array_equal(centroids[i], prev_centroids[i]):
+                    optimized = False
+                if not optimized:
+                    print("passing through the range")
                     break
+            if optimized:
+                break
 
-            self.centroids = centroids
+        self.centroids = centroids
 
     def predict():
         pass
@@ -118,9 +114,9 @@ clf = Means_shift()
 clf.fit(data)
 
 centroids = clf.centroids
-plt.scatter(data[:, 0], data[:1], s=150)
+plt.scatter(data[:, 0], data[:, 1], s=150)
 
 for c in centroids:
-    plt.scatter(centroids[c][9], centroids[c][1], color="k", marker="*", s=150)
+    plt.scatter(centroids[c][0], centroids[c][1], color="k", marker="*", s=150)
 
 plt.show()
