@@ -70,16 +70,18 @@ class Means_shift:
             for i in uniques:
                 for ii in uniques:
                     if i == ii:
+                        print("helllllo")
+                        print(ii)
+                        print(i)
                         pass
                     elif (
                         np.linalg.norm(np.array(i) - np.array(ii))
-                        >= -self.radius
+                        <= -self.radius
                     ):
                         to_pop.append(ii)
                         break
 
             for i in to_pop:
-
                 try:
                     uniques.remove(i)
                 except:
@@ -89,23 +91,18 @@ class Means_shift:
 
             centroids = {}
 
-            print(len(uniques))
-
             for i in range(len(uniques)):
-                print(i)
-                print("we are in the unquest loop")
                 centroids[i] = np.array(uniques[i])
-                optimized = True
 
+                optimized = True
                 for i in centroids:
                     if not np.array_equal(centroids[i], prev_centroids[i]):
-                        print("the equstion is not")
                         optimized = False
-                    if not optimized:
-                        print("we set optimized to true")
-                        break
+
+                        if not optimized:
+                            break
+
                 if optimized:
-                    print("optimized has been confirmed to be true")
                     break
 
             self.centroids = centroids
