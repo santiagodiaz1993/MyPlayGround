@@ -1,3 +1,5 @@
+# NOTE: convex is when any two points in a graph lay above the graph
+# most of the times U shapes such that a crosing line never has a peak on top
 import matplotlib.pyplot as plt
 from matplotlib import style
 import numpy as np
@@ -99,7 +101,6 @@ class Means_shift:
                 if not np.array_equal(centroids[i], prev_centroids[i]):
                     optimized = False
                 if not optimized:
-                    print("passing through the range")
                     break
             if optimized:
                 break
