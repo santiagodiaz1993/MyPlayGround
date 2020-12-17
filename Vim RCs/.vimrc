@@ -1,4 +1,3 @@
-"PYTHON VIMRC
 scriptencoding utf-8
 " ============================================================================
 " Author: TaoBeier
@@ -36,6 +35,12 @@ Plugin 'VundleVim/Vundle.vim'
 " Active plugins
 " You can disable or add new ones here:
 
+" installation of FZF
+Plugin 'junegunn/fzf', { 'do': { -> fzf#install() } }
+Plugin 'junegunn/fzf.vim'
+
+"installation of vim-rooter
+Plugin 'airblade/vim-rooter'
 " Plugins from github repos:
 "linting with black
 Plugin 'psf/black'
@@ -74,7 +79,10 @@ Plugin 'michaeljsmith/vim-indent-object'
 " operators, highlighting, run and ipdb breakpoints)
 Plugin 'python-mode/python-mode'
 " Better autocompletion
-Plugin 'Shougo/neocomplcache.vim'
+" Trying a new autocompletion tool
+Plugin 'Valloric/YouCompleteMe'
+" Plugin 'davidhalter/jedi-vim'
+" Plugin 'Shougo/neocomplcache.vim'
 " Snippets manager (SnipMate), dependencies, and snippets repo
 Plugin 'MarcWeber/vim-addon-mw-utils'
 Plugin 'tomtom/tlib_vim'
@@ -96,7 +104,7 @@ Plugin 'vim-syntastic/syntastic'
 Plugin 'lilydjwg/colorizer'
 " Relative numbering of lines (0 is the current line)
 " Require Vim 7.3+
-" Plugin 'myusuf3/numbers.vim'
+Plugin 'myusuf3/numbers.vim'
 
 " javascript complete after install the plugin, you must cd the install
 " directory and run `npm install`, then add a .tern-project config file
@@ -563,3 +571,15 @@ let g:instant_markdown_autostart = 0
 let g:ale_linters = {"python": ["flake8"]}
 let g:ale_fixers = {"*": [], "python": ["black"]}
 autocmd BufWritePre *.py execute ':Black'
+
+" Setting relative line numbers on
+set relativenumber
+
+" Short cut addistion for copying to the clipboard
+set clipboard=unnamedplus
+
+" setting FZF 
+set rtp+=~/.vim/bundle/fzf
+
+" Mapping for launching fzf quickly
+nmap <C-p> :Files<Cr>
