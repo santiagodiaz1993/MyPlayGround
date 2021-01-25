@@ -1,10 +1,9 @@
 import numpy as np
 import nnfs
-from nnfs.datasets import spiral_data
+from nnfs.datasets import vertical_data
 
 
 nnfs.init()
-
 
 # Desnse layer
 class Layer_Dense:
@@ -16,6 +15,8 @@ class Layer_Dense:
 
     def forward(self, inputs):
         # calculate output values from inputs wights and biases
+        print("this ware the inputs")
+        print(inputs)
         self.output = np.dot(inputs, self.weights) + self.biases
 
 
@@ -83,49 +84,64 @@ class Loss_CategoricalCrossentropy(Loss):
 
         return negative_log_likelihoods
 
-def
 
-# Create dataset
-x, y = spiral_data(samples=100, classes=3)
+# create dataset
+x, y = vertical_data(samples=100, classes=3)
+print(x)
+print(y)
 
-# Create Dense layer with 2 inputs features and 3 outputs values
-dense1 = Layer_Dense(2, 3)
-
-# Create ReLu activation  (to be used with Dense layer ):
+# create model
+dense1 = Layer_Dense(2, 3)  # First dense layer, 2 inputs
 activation1 = Activation_ReLu()
-
-# Create second  Dense layer with 3 inputs features (as we take output
-# of previous layer here) and 3 output values
-dense2 = Layer_Dense(3, 3)
-
-# Create softmax activation (to be used with Dense layer):
+dense2 = Layer_Dense(3, 3)  # Second layer, 3 inputs and 3 outputs
 activation2 = Activation_Softmax()
 
-# Create loss function
+
+# Create model
 loss_function = Loss_CategoricalCrossentropy()
 
-# Make a forward pass of our tranning data through this layer
-dense1.forward(x)
+# saving weights and biases data into variables
+lowest_loss = 99999  # some randome initial value
+best_dense1_weights = dense1.weights.copy()
+best_dense1_biases = dense1.biases.copy()
+best_dense2_weights = dense2.weights.copy()
+best_dense2_biases = dense2.biases.copy()
 
-# Make a forward pass through activation function
-# it takes the output of first dense layer here
-activation1.forward(dense1.output)
 
+for iteration in range(10000):
 
-# Make a forward pass through second Dense layer
-# it takes the output of activation function of first layer as inputs
-dense2.forward(activation1.output)
+    # Geneate a new set of eights and biases
+    dense1.weights = 0.05 * np.random.randn(2, 3)
+    dense1.biases = 0.05 * np.random.randn(1, 3)
+    dense1.weights = 0.05 * np.random.randn(3, 3)
+    dense1.biases = 0.05 * np.random.randn(1, 3)
 
-# Make a forward pass through activation function
-# it takes the output of the second dense layer here
-activation2.forward(dense2.output)
+    # Perform a forward pass of the trainning data thoguh this layer
+    dense1.forward(x)
+    activation1.forward(dense1.output)
+    dense2.forward(activation1.output)
+    activation2.forward(dense2.output)
 
-# Lets see the output of the first few samples
-print(activation2.output[:3])
+    # Perform a foward pass through activation function
+    # it takes the ouput of second dense layer and returns los
+    loss = loss_function.calculate(activation2.output, y)
 
-# Perform foward pass through activation function
-# it takes output of second dense layer here and returns loss
+    # Calculate accuracy from outpout of activation2 and targets
+    # calculate values along first axis
+    predictions = np.argamx(activation2.output, axis=1)
+    accuracy = np.mean(predictions == y)
 
-loss = loss_function.calculate(activation2.output, y)
-# loss2 = loss_function.testing(activation2.output, y)
-print(loss)
+    if loss < lowest_loss:
+        print(
+            "New set of wights and biases found, iteration:",
+            iteration,
+            "loss",
+            loss,
+            "Accuracy",
+            accuracy,
+        )
+        best_dense1_weights = dense1.weights.copy()
+        best_dense1_biases = dense1.biases.copy()
+        best_dense2_weights = dense2.weights.copy()
+        best_dense2_biases = dense2.biases.copy()
+        lowest_loss = loss
