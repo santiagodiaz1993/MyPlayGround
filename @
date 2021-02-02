@@ -1,0 +1,19 @@
+import numpy as np
+
+# Passed in gradient from the next layer fro the pupose of this example we are
+# going to use an array of an incremental gradient values
+dvalues = np.array([[1, 1, 1],
+                    [2, 2, 2],
+                    [3, 3, 3]])
+# We have 3 sets of inpurts - samples
+inputs = np.array([[1, 2, 3, 2.5],
+                   [2, 5, -1, 2],
+                   [-1.5, 2.7, 3.3, -0.8]])
+
+# We have 3 sets of weights - one set for each neuron
+# we have 4 inputs this 4 weights recall that we keep weights transposed
+weights = np.array([[.2, .8, -.5, 1],
+                    [.5, -.91, .26, -.5],
+                    [-.26, -.27, .17, .87]]).T
+
+
