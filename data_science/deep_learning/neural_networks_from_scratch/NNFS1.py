@@ -18,6 +18,14 @@ class Layer_Dense:
         # calculate output values from inputs wights and biases
         self.output = np.dot(inputs, self.weights) + self.biases
 
+    self.inputs = inputs
+
+    def backward(self, dvalues):
+        # Gradients on parameter
+        self.dweights = np.dot(self.inputs.T, dvalues)
+        # Gradient on values
+        self.dbiases = np.sum(dvalues, self.weights.T)
+
 
 # RElu activation
 class Activation_ReLu:
@@ -27,6 +35,14 @@ class Activation_ReLu:
         # Calculate output values from input
         self.output = np.maximum(0, inputs)
 
+    # backward pass
+    def backward(self, inputs):
+        # since we need to modify the original variable, lets make a copy of
+        # the values first
+        self.dinputs = dvalues.copy()
+
+        # zero gradient where inputs value were negative
+        self.dinputs[self.inputs <= 0] = 0
 
 class Activation_Softmax:
 
@@ -40,6 +56,7 @@ class Activation_Softmax:
         probabilities = exp_values / np.sum(exp_values, axis=1, keepdims=True)
 
         self.output = probabilities
+
 
 
 class Loss:
@@ -80,6 +97,26 @@ class Loss_CategoricalCrossentropy(Loss):
 
         # Losses
         negative_log_likelihoods = -np.log(correct_confidences)
+
+    def backpropagation(self, dvalues, y_true):
+        # Number of samples
+        samples = len(dvalues)
+
+        # Number of labels in every sample well use the first sample to count
+        # them
+        labels = len(dvalues[0])
+
+        # if lables are sparse, trun them into one-hot vector
+        if len(y_true.shape) == 1:
+            y_true = np.eye(labels)[y_true]
+
+        # calculate the gradient
+        self.dinputs = -y_true / dvalues
+
+        # Normalize gradient
+        self.dinputs = self.dinputs / samples
+
+
 
         return negative_log_likelihoods
 
