@@ -18,13 +18,14 @@ class Layer_Dense:
         # calculate output values from inputs wights and biases
         self.output = np.dot(inputs, self.weights) + self.biases
 
-    self.inputs = inputs
+        self.inputs = inputs
 
-    def backward(self, dvalues):
-        # Gradients on parameter
-        self.dweights = np.dot(self.inputs.T, dvalues)
-        # Gradient on values
-        self.dbiases = np.sum(dvalues, self.weights.T)
+
+def backward(self, dvalues):
+    # Gradients on parameter
+    self.dweights = np.dot(self.inputs.T, dvalues)
+    # Gradient on values
+    self.dbiases = np.sum(dvalues, self.weights.T)
 
 
 # RElu activation
@@ -36,13 +37,14 @@ class Activation_ReLu:
         self.output = np.maximum(0, inputs)
 
     # backward pass
-    def backward(self, inputs):
+    def backward(self, dvalues):
         # since we need to modify the original variable, lets make a copy of
         # the values first
         self.dinputs = dvalues.copy()
 
         # zero gradient where inputs value were negative
         self.dinputs[self.inputs <= 0] = 0
+
 
 class Activation_Softmax:
 
@@ -57,6 +59,25 @@ class Activation_Softmax:
 
         self.output = probabilities
 
+    def backward(self, dvalues):
+
+        # Create uninitialized array
+        self.inputs = np.empty_like(dvalues)
+
+        # Enumarate outputs and gradients
+        for index, (single_output, single_dvalue) in enumerate(
+            zip(self.output, dvalues)
+        ):
+            # Flatten output array
+            single_output = single_output.reshape(-1, 1)
+            # Calvulate Jacobian matrix of the output
+            jacobian_matrix = np.diagflat(single_output) - np.dot(
+                single_output, single_output.T
+            )
+
+            # Calculate sample-wise gradient and add it to the array of sample
+            # gradients
+            self.dinputs[index] = np.dot(jacobian_matrix, single_dvalue)
 
 
 class Loss:
@@ -97,6 +118,7 @@ class Loss_CategoricalCrossentropy(Loss):
 
         # Losses
         negative_log_likelihoods = -np.log(correct_confidences)
+        return negative_log_likelihoods
 
     def backpropagation(self, dvalues, y_true):
         # Number of samples
@@ -107,20 +129,16 @@ class Loss_CategoricalCrossentropy(Loss):
         labels = len(dvalues[0])
 
         # if lables are sparse, trun them into one-hot vector
+        # check for encoding, if discrete or one hot
         if len(y_true.shape) == 1:
             y_true = np.eye(labels)[y_true]
 
         # calculate the gradient
-        self.dinputs = -y_true / dvalues
+        self.dinputs = -y_true / dvalues  # Target values / predicted values
 
         # Normalize gradient
         self.dinputs = self.dinputs / samples
 
-
-
-        return negative_log_likelihoods
-
-def
 
 # Create dataset
 x, y = spiral_data(samples=100, classes=3)
