@@ -290,7 +290,7 @@ loss_activation = Activation_Softmax_Loss_CategoricalCrossentropy()
 # Create optimizer
 optimizer = Optimizer_SGBD()
 
-for epoch in range(10001):
+for epoch in range(1000):
 
     # Perform a foward pass of our trainning data through this layer
     dense1.forward(X)
@@ -322,11 +322,9 @@ for epoch in range(10001):
     print("acc:", accuracy)
 
     if not epoch % 100:
-        print(
-            f"epoch: {epoch}, "
-            + f"acc: {accuracy: .3f}, "
-            + f"loss: {loss:.3f}"
-        )
+        print(f'epoch: {epoch}, ' +
+              f'acc: {accuracy: .3f},' +
+              f'loss: {loss:.3f}')
 
     # Backward pass
     loss_activation.backward(loss_activation.output, y)
@@ -334,7 +332,6 @@ for epoch in range(10001):
     activation1.backward(dense2.dinputs)
     dense1.backward(activation1.dinputs)
 
-    # Update the weights and biases
     optimizer.update_params(dense1)
     optimizer.update_params(dense2)
 
