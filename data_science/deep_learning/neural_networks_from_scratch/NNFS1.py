@@ -14,12 +14,14 @@ class Layer_Dense:
         self.weights = 0.01 * np.random.randn(n_inputs, n_neurons)
         self.biases = np.zeros((1, n_neurons))
 
+    # Foward values
     def forward(self, inputs):
+        # Remember input values
+        self.inputs = inputs
         # calculate output values from inputs wights and biases
         self.output = np.dot(inputs, self.weights) + self.biases
 
-        self.inputs = inputs
-
+    # backward pass
     def backward(self, dvalues):
         # Gradients on parameter
         self.dweights = np.dot(self.inputs.T, dvalues)
@@ -48,10 +50,13 @@ class Activation_ReLu:
         self.dinputs[self.inputs <= 0] = 0
 
 
+# Softmax activation function
 class Activation_Softmax:
 
     # Foward pass
     def forward(self, inputs):
+        # Remember the inputs values
+        self.inputs = inputs
 
         # Get unnormalized probabilities
         exp_values = np.exp(inputs - np.max(inputs, axis=1, keepdims=True))
@@ -82,6 +87,7 @@ class Activation_Softmax:
             self.dinputs[index] = np.dot(jacobian_matrix, single_dvalue)
 
 
+# Common loss class
 class Loss:
 
     # Calculating the data and regularization losses
@@ -110,13 +116,13 @@ class Loss_CategoricalCrossentropy(Loss):
 
         # Clip data to prevent division by 0 (log(0) or log(1))
         # Clip both sides o not drag mean towards any value
-        y_pred_cliped = np.clip(y_pred, 1e-7, 1 - 1e-7)
+        y_pred_clipped = np.clip(y_pred, 1e-7, 1 - 1e-7)
 
         if len(y_true.shape) == 1:
-            correct_confidences = y_pred_cliped[range(samples), y_true]
+            correct_confidences = y_pred_clipped[range(samples), y_true]
 
         elif len(y_true.shape) == 2:
-            correct_confidences = np.sum(y_pred_cliped * y_true, axis=1)
+            correct_confidences = np.sum(y_pred_clipped * y_true, axis=1)
 
         # Losses
         negative_log_likelihoods = -np.log(correct_confidences)
@@ -162,34 +168,20 @@ class Activation_Softmax_Loss_CategoricalCrossentropy:
         return self.loss.calculate(self.output, y_true)
 
     def backward(self, dvalues, y_true):
-        # print("y_ture is")
-        # print(y_true)
-        # print("dvalues are")
-        # print(dvalues)
 
         # Number of sample
         samples = len(dvalues)
-        # print("these are the samples")
-        # print(samples)
 
         # if labels are one-hot encoded, turn them into descrete values
         if len(y_true.shape) == 2:
-            # print("Len is longer than 2 and it is:")
-            # print(y_true.shape)
             y_true = np.argmax(y_true, axis=1)
-            # print("and now we have turned it into")
-            # print(y_true)
 
         # Copy so we can safeley modify
         self.dinputs = dvalues.copy()
         # calculate gradient
         self.dinputs[range(samples), y_true] -= 1
-        # print("the derivative of the inputs are ")
-        # print(self.dinputs)
         # Normalize gradient
-        self.inputs = self.dinputs / samples
-        # print("the inputs are ")
-        # print(self.inputs)
+        self.dinputs = self.dinputs / samples
 
 
 # SGBD optimizer
@@ -197,7 +189,7 @@ class Optimizer_SGBD:
     # Initializing optimizer - set settings
     # Learning rate for 1, is the default for this optimizer
     def __init__(self, learning_rate=1):
-        self.learning_rate = 1
+        self.learning_rate = learning_rate
 
     # Update paramters
     def update_params(self, layer):
@@ -205,7 +197,6 @@ class Optimizer_SGBD:
         layer.biases += -self.learning_rate * layer.dbiases
 
 
-# # Create dataset
 # x, y = spiral_data(samples=100, classes=3)
 #
 # # Create Dense layer with 2 inputs features and 3 outputs values
@@ -240,36 +231,33 @@ class Optimizer_SGBD:
 # print(loss_activation.output[:5])
 #
 # # print loss value
-# # print("This is the loss", loss)
+# print("This is the loss", loss)
 #
 # predictions = np.argmax(loss_activation.output, axis=1)
 # if len(y.shape) == 2:
 #     y = np.argmax(y, axis=1)
 # accuracy = np.mean(predictions == y)
 #
-# # print accuracy
-# # print("accuracy", accuracy)
+# # Print accuracy
+# print("accuracy", accuracy)
 #
 # # backward pass
 # loss_activation.backward(loss_activation.output, y)
 # dense2.backward(loss_activation.dinputs)
-# # print("this are the dinputs from dense2")
-# # print(dense2.dinputs)
 # activation1.backward(dense2.dinputs)
 # dense1.backward(activation1.dinputs)
 #
-# # print(dense1.weights)
-# # print(dense1.dbiases)
-# # print(dense2.weights)
-# # print(dense2.dbiases)
+# print(dense1.dweights)
+# print(dense1.dbiases)
+# print(dense2.dweights)
+# print(dense2.dbiases)
 #
 #
-# optimizer = Optimizer_SGBD()
+#  optimizer = Optimizer_SGBD()
+#  optimizer.update_params(dense1)
+#  optimizer.update_params(dense2)
 #
-# optimizer.update_params(dense1)
-# optimizer.update_params(dense2)
-#
-# Create data set
+#  Create data set
 
 X, y = spiral_data(samples=100, classes=3)
 
@@ -295,20 +283,17 @@ for epoch in range(10001):
     # Perform a foward pass of our trainning data through this layer
     dense1.forward(X)
 
-    # Perform a foward pass through activation function takes the output of first
-    # dense layer here
+    # Perform a foward pass through activation function takes the output of
+    # first dense layer here
     activation1.forward(dense1.output)
 
-    # Perform a foward pass through the second dense layer takes outputs of second
-    # layer and reurns loss
+    # Perform a foward pass through the second dense layer takes outputs of
+    # second layer and reurns loss
     dense2.forward(activation1.output)
 
-    # Perform a foward pass through the activation/loss function takes the ouput of
-    # second dense layer here and returns loss
+    # Perform a foward pass through the activation/loss function takes the
+    # ouput of second dense layer here and returns loss
     loss = loss_activation.foward(dense2.output, y)
-
-    # Print loss value
-    print("loss is", loss)
 
     # Calculate accuracy from output of the activation2 and targets
     # calculate values along first axis
@@ -318,8 +303,6 @@ for epoch in range(10001):
         y = np.argmax(y, axis=1)
 
     accuracy = np.mean(predictions == y)
-
-    print("acc:", accuracy)
 
     if not epoch % 100:
         print(
@@ -339,32 +322,32 @@ for epoch in range(10001):
     optimizer.update_params(dense2)
 
 
-class speedtestsoftmaxpluscategoricalloss:
-    softmax_ouputs = np.array(
-        [[0.7, 0.1, 0.2], [0.1, 0.5, 0.4], [0.02, 0.9, 0.08]]
-    )
-
-    class_targets = np.array([0, 1, 1])
-
-    def f1(softmax_ouputs, class_targets):
-        softmax_loss = Activation_Softmax_Loss_CategoricalCrossentropy()
-        softmax_loss.backward(softmax_ouputs, class_targets)
-        dvalues1 = softmax_loss.inputs
-        print("Gradients: combined loss and activation:")
-        print(dvalues1)
-
-    def f2(softmax_ouputs, class_targets):
-        activation = Activation_Softmax()
-        activation.output = softmax_ouputs
-        loss = Loss_CategoricalCrossentropy()
-        loss.backward(softmax_ouputs, class_targets)
-        activation.backward(loss.dinputs)
-        dvalues2 = activation.dinputs
-        print("Gradients: seperate loss and activation:")
-        print(dvalues2)
-
-    # TODO(sdiaz): Fix the testing of the speed
-    # t1 = timeit(lambda: f1(softmax_ouputs, class_targets), number=10000)
-    # t2 = timeit(lambda: f2(softmax_ouputs, class_targets), number=10000)
-
-    # print(t1 / t2)
+# lass speedtestsoftmaxpluscategoricalloss:
+#    softmax_ouputs = np.array(
+#        [[0.7, 0.1, 0.2], [0.1, 0.5, 0.4], [0.02, 0.9, 0.08]]
+#    )
+#
+#    class_targets = np.array([0, 1, 1])
+#
+#    def f1(softmax_ouputs, class_targets):
+#        softmax_loss = Activation_Softmax_Loss_CategoricalCrossentropy()
+#        softmax_loss.backward(softmax_ouputs, class_targets)
+#        dvalues1 = softmax_loss.inputs
+#        print("Gradients: combined loss and activation:")
+#        print(dvalues1)
+#
+#    def f2(softmax_ouputs, class_targets):
+#        activation = Activation_Softmax()
+#        activation.output = softmax_ouputs
+#        loss = Loss_CategoricalCrossentropy()
+#        loss.backward(softmax_ouputs, class_targets)
+#        activation.backward(loss.dinputs)
+#        dvalues2 = activation.dinputs
+#        print("Gradients: seperate loss and activation:")
+#        print(dvalues2)
+#
+#    # TODO(sdiaz): Fix the testing of the speed
+#    # t1 = timeit(lambda: f1(softmax_ouputs, class_targets), number=10000)
+#    # t2 = timeit(lambda: f2(softmax_ouputs, class_targets), number=10000)
+#
+#    # print(t1 / t2)
