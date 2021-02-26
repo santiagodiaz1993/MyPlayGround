@@ -16,8 +16,8 @@ class Layer_Dense:
 
     # Foward values
     def forward(self, inputs):
-        print("these are the inputs")
-        print(inputs)
+        # print("these are the inputs")
+        # print(inputs)
         # Remember input values
         self.inputs = inputs
         # calculate output values from inputs wights and biases
@@ -206,7 +206,7 @@ class Optimizer_SGBD:
     def update_params(self, layer):
         # print("this is the current learning rate")
         # print(self.current_learning_rate)
-        layer.weights += -self.current_learning_rate * layer.weights
+        layer.weights += -self.current_learning_rate * layer.dweights
         layer.biases += -self.current_learning_rate * layer.dbiases
         # print("this is the current layer weights")
         # print(layer.weights)
@@ -214,72 +214,9 @@ class Optimizer_SGBD:
     def post_update_params(self):
         self.iterations += 1
 
-    # x, y = spiral_data(samples=100, classes=3)
-    #
-    # # Create Dense layer with 2 inputs features and 3 outputs values
-    # dense1 = Layer_Dense(2, 3)
-    #
-    # # Create ReLu activation  (to be used with Dense layer ):
-    # activation1 = Activation_ReLu()
-    #
-    # # Create second  Dense layer with 3 inputs features (as we take output
-    # # of previous layer here) and 3 output values
-    # dense2 = Layer_Dense(3, 3)
-    #
-    # # Create softmax classifiers combined loss activation
-    # loss_activation = Activation_Softmax_Loss_CategoricalCrossentropy()
-    #
-    # # Make a forward pass of our tranning data through this layer
-    # dense1.forward(x)
-    #
-    # # Make a forward pass through activation function
-    # # it takes the output of first dense layer here
-    # activation1.forward(dense1.output)
-    #
-    # # Make a forward pass through second Dense layer
-    # # it takes the output of activation function of first layer as inputs
-    # dense2.forward(activation1.output)
-    #
-    # # Perform a foward pass throuugh the activation/loss function takes the ouput
-    # # of second dense layer here and returns loss
-    # loss = loss_activation.foward(dense2.output, y)
-    #
-    # # Les see output of the first few examples
-    # print(loss_activation.output[:5])
-    #
-    # # print loss value
 
-
-# print("This is the loss", loss)
-#
-# predictions = np.argmax(loss_activation.output, axis=1)
-# if len(y.shape) == 2:
-#     y = np.argmax(y, axis=1)
-# accuracy = np.mean(predictions == y)
-#
-# # Print accuracy
-# print("accuracy", accuracy)
-#
-# # backward pass
-# loss_activation.backward(loss_activation.output, y)
-# dense2.backward(loss_activation.dinputs)
-# activation1.backward(dense2.dinputs)
-# dense1.backward(activation1.dinputs)
-#
-# print(dense1.dweights)
-# print(dense1.dbiases)
-# print(dense2.dweights)
-# print(dense2.dbiases)
-#
-#
-#  optimizer = Optimizer_SGBD()
-#  optimizer.update_params(dense1)
-#  optimizer.update_params(dense2)
-#
 #  Create data set
-
 X, y = spiral_data(samples=100, classes=3)
-
 
 # Create Dense Layer with 2 inputs features and 64 inputs values
 dense1 = Layer_Dense(2, 64)
@@ -302,12 +239,7 @@ optimizer = Optimizer_SGBD(decay=1e-2)
 for epoch in range(10001):
 
     # Perform a foward pass of our trainning data through this layer
-    print(10 * "#" + str(epoch))
-    print("weights before doing a foward")
-    print(dense1.weights)
     dense1.forward(X)
-    print("weights after foward")
-    print(dense1.weights)
 
     # Perform a foward pass through activation function takes the output of
     # first dense layer here
@@ -343,13 +275,16 @@ for epoch in range(10001):
     dense2.backward(loss_activation.dinputs)
     activation1.backward(dense2.dinputs)
     dense1.backward(activation1.dinputs)
-
-    # Update the weights and biases
     optimizer.pre_update_params()
-    optimizer.update_params(dense1)
+    # print(20 * "#")
+    # print("these are the werights  before optimization" + str(epoch))
+    # print(dense1.weights)
+    # Update the weights and biases
+    optimizer.update_params(dense1)  # This is the one causing th eproblem
     optimizer.update_params(dense2)
     optimizer.post_update_params()
-
+    # print("these are the werights after epoch after optimization" + str(epoch))
+    # print(dense1.weights)
 
 # lass speedtestsoftmaxpluscategoricalloss:
 #    softmax_ouputs = np.array(
