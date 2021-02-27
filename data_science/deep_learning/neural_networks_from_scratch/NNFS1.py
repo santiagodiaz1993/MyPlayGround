@@ -189,11 +189,12 @@ class Activation_Softmax_Loss_CategoricalCrossentropy:
 class Optimizer_SGBD:
     # Initializing optimizer - set settings
     # Learning rate for 1, is the default for this optimizer
-    def __init__(self, learning_rate=1, decay=0):
+    def __init__(self, learning_rate=1, decay=1e-3, momentum=1):
         self.learning_rate = learning_rate
         self.current_learning_rate = learning_rate
         self.decay = decay
         self.iterations = 0
+        self.momentum = momentum
 
     # Call once before any paratmeter updates
     def pre_update_params(self):
@@ -204,14 +205,45 @@ class Optimizer_SGBD:
 
     # Update paramters
     def update_params(self, layer):
-        # print("this is the current learning rate")
-        # print(self.current_learning_rate)
-        layer.weights += -self.current_learning_rate * layer.dweights
-        layer.biases += -self.current_learning_rate * layer.dbiases
-        # print("this is the current layer weights")
-        # print(layer.weights)
+
+        # If momentum has been set
+        if self.momentum:
+            # If layer does not contain momentum arrays, create them filled
+            # with zeros
+            if not hasattr(layer, "weight_momentums"):
+                layer.weight_momentums = np.zeros_like(layer.weights)
+                # If there is no momentum array for weights
+                # The array does not exit for biases yet either
+                layer.bias_momentums = np.zeros_like(layer.biases)
+
+            # Build weight updates with momentum - take previous
+            # updates multiplied by retain factor and updates with
+            # current gradient
+            weight_updates = (
+                self.momentum * layer.weight_momentums
+                - self.current_learning_rate * layer.dweights
+            )
+            layer.weights_momentums = weight_updates
+
+            # build biases updates
+            bias_updates = (
+                self.momentum * layer.bias_momentums
+                - self.current_learning_rate * layer.dbiases
+            )
+            layer.bias_momentums = bias_updates
+
+        # Vanilla SGF updates (without momentum, only LR, and decay)
+        else:
+            weight_updates = -self.current_learning_rate * layer.dweights
+            bias_updates = -self.current_learning_rate * layer.dbiases
+
+        # Update weights and biases using either
+        # vanilla or momentum updates
+        layer.weights += weight_updates
+        layer.biases += bias_updates
 
     def post_update_params(self):
+
         self.iterations += 1
 
 
@@ -232,7 +264,7 @@ dense2 = Layer_Dense(64, 3)
 loss_activation = Activation_Softmax_Loss_CategoricalCrossentropy()
 
 # Create optimizer
-optimizer = Optimizer_SGBD(decay=1e-2)
+optimizer = Optimizer_SGBD(decay=1e-3)
 
 # print("weights after creating uptimizer")
 # print(dense1.weights)
@@ -276,42 +308,6 @@ for epoch in range(10001):
     activation1.backward(dense2.dinputs)
     dense1.backward(activation1.dinputs)
     optimizer.pre_update_params()
-    # print(20 * "#")
-    # print("these are the werights  before optimization" + str(epoch))
-    # print(dense1.weights)
-    # Update the weights and biases
-    optimizer.update_params(dense1)  # This is the one causing th eproblem
+    optimizer.update_params(dense1)
     optimizer.update_params(dense2)
     optimizer.post_update_params()
-    # print("these are the werights after epoch after optimization" + str(epoch))
-    # print(dense1.weights)
-
-# lass speedtestsoftmaxpluscategoricalloss:
-#    softmax_ouputs = np.array(
-#        [[0.7, 0.1, 0.2], [0.1, 0.5, 0.4], [0.02, 0.9, 0.08]]
-#    )
-#
-#    class_targets = np.array([0, 1, 1])
-#
-#    def f1(softmax_ouputs, class_targets):
-#        softmax_loss = Activation_Softmax_Loss_CategoricalCrossentropy()
-#        softmax_loss.backward(softmax_ouputs, class_targets)
-#        dvalues1 = softmax_loss.inputs
-#        print("Gradients: combined loss and activation:")
-#        print(dvalues1)
-#
-#    def f2(softmax_ouputs, class_targets):
-#        activation = Activation_Softmax()
-#        activation.output = softmax_ouputs
-#        loss = Loss_CategoricalCrossentropy()
-#        loss.backward(softmax_ouputs, class_targets)
-#        activation.backward(loss.dinputs)
-#        dvalues2 = activation.dinputs
-#        print("Gradients: seperate loss and activation:")
-#        print(dvalues2)
-#
-#    # TODO(sdiaz): Fix the testing of the speed
-#    # t1 = timeit(lambda: f1(softmax_ouputs, class_targets), number=10000)
-#    # t2 = timeit(lambda: f2(softmax_ouputs, class_targets), number=10000)
-#
-#    # print(t1 / t2)
