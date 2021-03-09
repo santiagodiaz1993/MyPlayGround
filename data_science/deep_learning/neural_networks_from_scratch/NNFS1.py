@@ -1,7 +1,6 @@
 import numpy as np
 import nnfs
 from nnfs.datasets import spiral_data
-from timeit import timeit
 
 nnfs.init()
 
@@ -11,13 +10,12 @@ class Layer_Dense:
 
     # Initialize weights and biases
     def __init__(self, n_inputs, n_neurons):
+        # Initialize weights and biases
         self.weights = 0.01 * np.random.randn(n_inputs, n_neurons)
         self.biases = np.zeros((1, n_neurons))
 
-    # Foward values
+    # Foward pass
     def forward(self, inputs):
-        # print("these are the inputs")
-        # print(inputs)
         # Remember input values
         self.inputs = inputs
         # calculate output values from inputs wights and biases
@@ -44,7 +42,7 @@ class Activation_ReLu:
 
     # backward pass
     def backward(self, dvalues):
-        # since we need to modify the original variable, lets make a copy of
+        # Since we need to modify the original variable, lets make a copy of
         # the values first
         self.dinputs = dvalues.copy()
 
@@ -57,7 +55,7 @@ class Activation_Softmax:
 
     # Foward pass
     def forward(self, inputs):
-        # Remember the inputs values
+        # Remember inputs values
         self.inputs = inputs
 
         # Get unnormalized probabilities
@@ -87,6 +85,115 @@ class Activation_Softmax:
             # Calculate sample-wise gradient and add it to the array of sample
             # gradients
             self.dinputs[index] = np.dot(jacobian_matrix, single_dvalue)
+
+
+# SGBD optimizer
+class Optimizer_SGBD:
+    # Initializing optimizer - set settings
+    # Learning rate for 1, is the default for this optimizer
+    def __init__(self, learning_rate=1, decay=0, momentum=0):
+        self.learning_rate = learning_rate
+        self.current_learning_rate = learning_rate
+        self.decay = decay
+        self.iterations = 0
+        self.momentum = momentum
+
+    # Call once before any paratmeter updates
+    def pre_update_params(self):
+        if self.decay:
+            self.current_learning_rate = self.learning_rate * (
+                1 / (1 + self.decay * self.iterations)
+            )
+
+    # Update paramters
+    def update_params(self, layer):
+
+        # If momentum has been set
+        if self.momentum:
+            # If layer does not contain momentum arrays, create them filled
+            # with zeros
+            if not hasattr(layer, "weight_momentums"):
+                layer.weight_momentums = np.zeros_like(layer.weights)
+                # If there is no momentum array for weights
+                # The array does not exit for biases yet either
+                layer.bias_momentums = np.zeros_like(layer.biases)
+
+            # Build weight updates with momentum - take previous
+            # updates multiplied by retain factor and updates with
+            # current gradient
+            weight_updates = (
+                self.momentum * layer.weight_momentums
+                - self.current_learning_rate * layer.dweights
+            )
+            layer.weights_momentums = weight_updates
+
+            # build biases updates
+            bias_updates = (
+                self.momentum * layer.bias_momentums
+                - self.current_learning_rate * layer.dbiases
+            )
+            layer.bias_momentums = bias_updates
+
+        # Vanilla SGF updates (without momentum, only LR, and decay)
+        else:
+            weight_updates = -self.current_learning_rate * layer.dweights
+            bias_updates = -self.current_learning_rate * layer.dbiases
+
+        # Update weights and biases using either
+        # vanilla or momentum updates
+        layer.weights += weight_updates
+        layer.biases += bias_updates
+
+    def post_update_params(self):
+        self.iterations += 1
+
+
+class Optimizer_Adagrad:
+
+    # Initializing optimizer - set settings
+    def __init__(self, learning_rate=1, decay=0, epsilon=1e-7):
+        self.learning_rate = learning_rate
+        self.current_learning_rate = learning_rate
+        self.decay = decay
+        self.iterations = 0
+        self.epsilon = epsilon
+
+    # Call once before any paratmeter updates
+    def pre_update_params(self):
+        if self.decay:
+            self.current_learning_rate = self.learning_rate * (
+                1 / (1 + self.decay * self.iterations)
+            )
+
+    # Update paramters
+    def update_params(self, layer):
+
+        # if layer does not contrain cache arrays
+        # create them filled with zeros
+        if not hasattr(layer, "weight_cache"):
+            layer.weight_cache = np.zeros_like(layer.weights)
+            layer.bias_cache = np.zeros_like(layer.biases)
+
+        # Update cache with square current gradients
+        layer.weight_cache += layer.weights ** 2
+        layer.bias_cache += layer.dbiases ** 2
+
+        # Vanilla SGD parameter update + normalization
+        # with saquare rooted cache
+        layer.weights += (
+            -self.current_learning_rate
+            * layer.dweights
+            / (np.sqrt(layer.weight_cache) + self.epsilon)
+        )
+
+        layer.biases += (
+            -self.current_learning_rate
+            * layer.dbiases
+            / (np.sqrt(layer.bias_cache) + self.epsilon)
+        )
+
+    def post_update_params(self):
+        self.iterations += 1
 
 
 # Common loss class
@@ -185,68 +292,6 @@ class Activation_Softmax_Loss_CategoricalCrossentropy:
         self.dinputs = self.dinputs / samples
 
 
-# SGBD optimizer
-class Optimizer_SGBD:
-    # Initializing optimizer - set settings
-    # Learning rate for 1, is the default for this optimizer
-    def __init__(self, learning_rate=1, decay=1e-3, momentum=1):
-        self.learning_rate = learning_rate
-        self.current_learning_rate = learning_rate
-        self.decay = decay
-        self.iterations = 0
-        self.momentum = momentum
-
-    # Call once before any paratmeter updates
-    def pre_update_params(self):
-        if self.decay:
-            self.current_learning_rate = self.learning_rate * (
-                1 / (1 + self.decay * self.iterations)
-            )
-
-    # Update paramters
-    def update_params(self, layer):
-
-        # If momentum has been set
-        if self.momentum:
-            # If layer does not contain momentum arrays, create them filled
-            # with zeros
-            if not hasattr(layer, "weight_momentums"):
-                layer.weight_momentums = np.zeros_like(layer.weights)
-                # If there is no momentum array for weights
-                # The array does not exit for biases yet either
-                layer.bias_momentums = np.zeros_like(layer.biases)
-
-            # Build weight updates with momentum - take previous
-            # updates multiplied by retain factor and updates with
-            # current gradient
-            weight_updates = (
-                self.momentum * layer.weight_momentums
-                - self.current_learning_rate * layer.dweights
-            )
-            layer.weights_momentums = weight_updates
-
-            # build biases updates
-            bias_updates = (
-                self.momentum * layer.bias_momentums
-                - self.current_learning_rate * layer.dbiases
-            )
-            layer.bias_momentums = bias_updates
-
-        # Vanilla SGF updates (without momentum, only LR, and decay)
-        else:
-            weight_updates = -self.current_learning_rate * layer.dweights
-            bias_updates = -self.current_learning_rate * layer.dbiases
-
-        # Update weights and biases using either
-        # vanilla or momentum updates
-        layer.weights += weight_updates
-        layer.biases += bias_updates
-
-    def post_update_params(self):
-
-        self.iterations += 1
-
-
 #  Create data set
 X, y = spiral_data(samples=100, classes=3)
 
@@ -264,7 +309,7 @@ dense2 = Layer_Dense(64, 3)
 loss_activation = Activation_Softmax_Loss_CategoricalCrossentropy()
 
 # Create optimizer
-optimizer = Optimizer_SGBD(decay=1e-3)
+optimizer = Optimizer_Adagrad(decay=1e-4)
 
 # print("weights after creating uptimizer")
 # print(dense1.weights)
@@ -307,6 +352,8 @@ for epoch in range(10001):
     dense2.backward(loss_activation.dinputs)
     activation1.backward(dense2.dinputs)
     dense1.backward(activation1.dinputs)
+
+    # Update the weights and biases
     optimizer.pre_update_params()
     optimizer.update_params(dense1)
     optimizer.update_params(dense2)
