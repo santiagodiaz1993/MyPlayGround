@@ -1,6 +1,7 @@
 import numpy as np
 import nnfs
 from nnfs.datasets import spiral_data
+import random
 
 nnfs.init()
 
@@ -61,6 +62,27 @@ class Layer_Dense:
 
         # Gradient on values
         self.dinputs = np.dot(dvalues, self.weights.T)
+
+
+class Layer_Dropout:
+    def __init__(self, rate):
+        # Store rate, we invert it as for example for dropout
+        # of 0.01 we need success rate of 0.9
+        self.rate = 1 - rate
+
+    def forward(self, inputs):
+        # Save inputs values
+        self.inputs = inputs
+        # Genera and save scaled masks
+        self.binary_mask = (
+            np.random.binomial(1, self.rate, size=inputs.shape) / self.rate
+        )
+        # Apply mask to output values
+        self.output = inputs * self.binary_mask
+
+    def backward(self, dvalues):
+        # Gradient on values
+        self.inputs = dvalues * self.binary_mask
 
 
 # RElu activation
@@ -506,6 +528,9 @@ dense1 = Layer_Dense(
 # Create ReLu activation (to be used with Dense layer)
 activation1 = Activation_ReLu()
 
+# Create drop out layer
+dropout1 = Layer_Dropout(0.1)
+
 # Create second Dense Layer with 64 inputs features (as we take output of
 # previous layer here) and 3 ouput values (ouput values)
 dense2 = Layer_Dense(64, 3)
@@ -530,6 +555,9 @@ for epoch in range(10001):
     # Perform a foward pass through activation function takes the output of
     # first dense layer here
     activation1.forward(dense1.output)
+
+    # Perform a foward pass through Dropout Layer
+    dropout1.forward(activation1.output)
 
     # Perform a foward pass through the second dense layer takes outputs of
     # second layer and reurns loss
@@ -561,12 +589,15 @@ for epoch in range(10001):
             f"epoch: {epoch}, "
             + f"acc: {accuracy: .3f}, "
             + f"loss: {loss:.3f}, "
+            + f"data_loss: {data_loss:.3f}, "
+            + f"reg_loss: {regularization_loss:.3f}, "
             + f"lr:  {optimizer.current_learning_rate}",
         )
 
     # Backward pass
     loss_activation.backward(loss_activation.output, y)
     dense2.backward(loss_activation.dinputs)
+    dropout1.backward(dense2.inputs)
     activation1.backward(dense2.dinputs)
     dense1.backward(activation1.dinputs)
 
