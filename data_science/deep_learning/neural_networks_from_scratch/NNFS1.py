@@ -569,6 +569,20 @@ class Loss_BinaryCrossentropy(Loss):
         self.dinputs = self.dinputs / samples
 
 
+class Activation_Lienar:
+
+    # forward pass
+    def forward(self, inputs):
+        # Just remember values
+        self.inputs = inputs
+        self.ouputs = inputs
+
+    # Backward pass
+    def backward(self, dvalues):
+        # Derivative is 1, 1 * dvalues = dvalues - chain rule
+        self.dinputs = dvalues.copy()
+
+
 #  Create data set
 X, y = spiral_data(samples=100, classes=2)
 
