@@ -2,6 +2,7 @@ import numpy as np
 import nnfs
 from nnfs.datasets import spiral_data
 from nnfs.datasets import sine_data
+import matplotlib.pyplot as plt
 
 nnfs.init()
 
@@ -20,7 +21,7 @@ class Layer_Dense:
         bias_regularizer_l2=0,
     ):
         # Initialize weights and biases
-        self.weights = 0.01 * np.random.randn(n_inputs, n_neurons)
+        self.weights = 0.1 * np.random.randn(n_inputs, n_neurons)
         self.biases = np.zeros((1, n_neurons))
         # Set regularizsation strength
         self.weights_regularization_l1 = weights_regularization_l1
@@ -576,7 +577,7 @@ class Activation_Linear:
     def forward(self, inputs):
         # Just remember values
         self.inputs = inputs
-        self.outputs = inputs
+        self.output = inputs
 
     # Backward pass
     def backward(self, dvalues):
@@ -627,6 +628,103 @@ class Loss_MeanAbsoluteError(Loss):  # L1 loss
         self.dinputs = np.sign(y_true - dvalues) / outputs
         # Normalize gradient
         self.dinputs = self.dinputs / samples
+
+
+class Model:
+    def __init__(self):
+        # Create a list of network objects
+        self.layers = []
+
+    # Add objects to the model
+    def add(self, layer):
+        self.layers.append(layer)
+
+    def set(self, *, loss, optimizer):
+        self.loss = loss
+        self.optimizer = optimizer
+
+    # Finalize the model
+    def finalize(self):
+        # Create adn set the input layer
+        self.input_layer = Layer_Input()
+        # Count all objects
+        layer_count = len(self.layers)
+        # Iterate the objects
+        for i in range(layer_count):
+            # If its the first layer
+            # the previous layer object is the input layer
+            if i == 0:
+                self.layers[i].prev = self.input_layer
+                self.layers[i].next = self.layers[i + 1]
+
+            # All layers except for the first and the last
+            elif i < layer_count - 1:
+                self.layers[i].prev = self.layers[i - 1]
+                self.layers[i].next = self.layers[i + 1]
+
+            # The last layer - the next object is the loss
+            else:
+                self.layers[i].prev = self.layers[i - 1]
+                self.layers[i].next = self.loss
+
+    # Train the model
+    def train(self, X, y, *, epochs=1, print_every=1):
+
+        # Main trainning loop
+        for epoch in range(1, epochs + 1):
+            # Perform a foward pass
+            output = self.forward(X)
+            # temporary
+            print(output)
+            exit()
+
+    # Train the model
+    def forward(self, x):
+
+        # Call forward method on the input layer
+        # this will set the ouput property that
+        # this first layer in "prev" objext is expecting
+        self.input_layer.forward(X)
+
+        # Call forward method of every object in a chain
+        # Pass output of the previous object as a parameter
+        for layer in self.layers:
+            layer.forward(layer.prev.output)
+
+        # "Layer" is now the last object from the list
+        # return is output
+        return layer.output
+
+
+class Layer_Input:
+    def forward(self, inputs):
+        self.output = inputs
+
+
+# Create data set
+X, y = sine_data()
+
+# Instant the model
+model = Model()
+
+# Add layers AKA set up the architecture
+model.add(Layer_Dense(1, 64))
+model.add(Activation_ReLu())
+model.add(Layer_Dense(64, 64))
+model.add(Activation_ReLu())
+model.add(Layer_Dense(64, 1))
+model.add(Activation_Linear())
+
+# Set loss and optimizer objects
+model.set(
+    loss=Loss_MeanSquaredError(),
+    optimizer=Optimizer_Adam(learning_rate=0.005, decay=1e-3),
+)
+
+# Finalize the model. This tels the object to chain all layers
+model.finalize()
+
+model.train(X, y, epochs=10000, print_every=100)
 
 
 #  Create data set
@@ -755,90 +853,119 @@ class Loss_MeanAbsoluteError(Loss):  # L1 loss
 #
 ##############################################################################
 # Regrestion testing
-X, y = sine_data()
-
-# Create Dense Layer with 1 input feature and 64 output values
-dense1 = Layer_Dense(1, 64)
-
-# Create ReLU activation (To be used with Dense Layer ):
-activation1 = Activation_ReLu()
-
-# Create second Dense Layer with 64 input features (as we take ouput
-# of previous layer here) and 1 output value
-dense2 = Layer_Dense(64, 1)
-
-# Create Linear activation:
-activation2 = Activation_Linear()
-
-# Create loss function
-loss_function = Loss_MeanSquaredError()
-
-# Create optimizer
-optimizer = Optimizer_Adam()
-
-# Accuracy precision for accuracy calculation
-# There are no really accuracy factor for regression problem,
-# but we can simulate/approximate it. Well calculate it by checking how many
-# values have a difference to their graoudn thruth equivalent less than given
-# precison.
-# We'll calculate this precision as a fraction of standar deviation of al the
-# ground thruth values
-accurate_precision = np.std(y) / 250
-
-# Train in loop
-for epoch in range(1001):
-    # Perform a forward pass of our trainning
-    dense1.forward(X)
-
-    # Perform a forward pass through activation function
-    # takes the ouput of first dense layer here
-    activation1.forward(dense1.output)
-
-    # Perform a forward pass through second dense layer takes ouputs of
-    # activation  function of first layer as inputs
-    dense2.forward(activation1.output)
-
-    # Perform a foward pass through activation function takes the ouput of
-    # second dense layer here
-    activation2.forward(dense2.output)
-
-    # Calculate the data loss
-    data_loss = loss_function.calculate(activation2.outputs, y)
-
-    # Calculate regularization penalty
-    regularization_loss = loss_function.regularization_loss(
-        dense1
-    ) + loss_function.regularization_loss(dense2)
-
-    # Calculate overall loss
-    loss = data_loss + regularization_loss
-
-    # Calculate accuracy from ouput of activation2 and targets
-    # to calculate it we're talking absolute difference between prediction and
-    # ground truth values and compare if difference are lower than given
-    # precision value
-    predictions = activation2.outputs
-    accuracy = np.mean(np.absolute(predictions - y) < accurate_precision)
-
-    if not epoch % 100:
-        print(
-            f"epoch: {epoch}, "
-            + f"acc: {accuracy:.3f}, "
-            + f"loss: {loss:.3f} ("
-            + f"data_loss: {data_loss:.3f}, "
-            + f"reg_loss: {regularization_loss:.3f}), "
-            + f"lr: {optimizer.current_learning_rate}"
-        )
-
-    # Backward pass
-    loss_function.backward(activation2.outputs, y)
-    activation2.backward(loss_function.dinputs)
-    dense2.backward(activation2.dinputs)
-    activation1.backward(dense2.dinputs)
-    dense1.backward(activation1.dinputs)
-
-    # Update the weights and biases
-    optimizer.pre_update_params()
-    optimizer.update_params(dense1)
-    optimizer.update_params(dense2)
-    optimizer.post_update_params()
+# X, y = sine_data()
+#
+# # Create Dense Layer with 1 input feature and 64 output values
+# dense1 = Layer_Dense(1, 64)
+#
+# # Create ReLU activation (To be used with Dense Layer ):
+# activation1 = Activation_ReLu()
+#
+# # Create second Dense Layer with 64 input features (as we take ouput
+# # of previous layer here) and 1 output value
+# dense2 = Layer_Dense(64, 64)
+#
+# # Create Linear activation:
+# activation2 = Activation_ReLu()
+#
+# # creating a third layer to add more adaptability
+# dense3 = Layer_Dense(64, 1)
+#
+# activation3 = Activation_Linear()
+#
+# # Create loss function
+# loss_function = Loss_MeanSquaredError()
+#
+# # Create optimizer
+# optimizer = Optimizer_Adam(
+#     learning_rate=0.005, decay=1e-3
+# )  # learning_rate=0.005, decay=1e-3)
+#
+# # Accuracy precision for accuracy calculation
+# # There are no really accuracy factor for regression problem,
+# # but we can simulate/approximate it. Well calculate it by checking how many
+# # values have a difference to their graoudn thruth equivalent less than given
+# # precison.
+# # We'll calculate this precision as a fraction of standar deviation of al the
+# # ground thruth values
+# accurate_precision = np.std(y) / 250
+#
+# # Train in loop
+# for epoch in range(10000):
+#     # Perform a forward pass of our trainning
+#     dense1.forward(X)
+#
+#     # Perform a forward pass through activation function
+#     # takes the ouput of first dense layer here
+#     activation1.forward(dense1.output)
+#
+#     # Perform a forward pass through second dense layer takes ouputs of
+#     # activation  function of first layer as inputs
+#     dense2.forward(activation1.output)
+#
+#     # Perform a foward pass through activation function takes the ouput of
+#     # second dense layer here
+#     activation2.forward(dense2.output)
+#
+#     dense3.forward(activation2.output)
+#
+#     activation3.forward(dense3.output)
+#
+#     # Calculate the data loss
+#     data_loss = loss_function.calculate(activation3.outputs, y)
+#
+#     # Calculate regularization penalty
+#     regularization_loss = (
+#         loss_function.regularization_loss(dense1)
+#         + loss_function.regularization_loss(dense2)
+#         + loss_function.regularization_loss(dense3)
+#     )
+#
+#     # Calculate overall loss
+#     loss = data_loss + regularization_loss
+#
+#     # Calculate accuracy from ouput of activation2 and targets
+#     # to calculate it we're talking absolute difference between prediction and
+#     # ground truth values and compare if difference are lower than given
+#     # precision value
+#     predictions = activation3.outputs
+#     accuracy = np.mean(np.absolute(predictions - y) < accurate_precision)
+#
+#     if not epoch % 100:
+#         print(
+#             f"epoch: {epoch}, "
+#             + f"acc: {accuracy:.3f}, "
+#             + f"loss: {loss:.3f} ("
+#             + f"data_loss: {data_loss:.3f}, "
+#             + f"reg_loss: {regularization_loss:.3f}), "
+#             + f"lr: {optimizer.current_learning_rate}"
+#         )
+#
+#     # Backward pass
+#     loss_function.backward(activation3.outputs, y)
+#     activation3.backward(loss_function.dinputs)
+#     dense3.backward(activation3.dinputs)
+#     activation2.backward(dense3.dinputs)
+#     dense2.backward(activation2.dinputs)
+#     activation1.backward(dense2.dinputs)
+#     dense1.backward(activation1.dinputs)
+#
+#     # Update the weights and biases
+#     optimizer.pre_update_params()
+#     optimizer.update_params(dense1)
+#     optimizer.update_params(dense2)
+#     optimizer.update_params(dense3)
+#     optimizer.post_update_params()
+#
+# X_test, y_test = sine_data()
+#
+# dense1.forward(X_test)
+# activation1.forward(dense1.output)
+# dense2.forward(activation1.output)
+# activation2.forward(dense2.output)
+# dense3.forward(activation2.output)
+# activation3.forward(dense3.output)
+#
+# plt.plot(X_test, y_test)
+# plt.plot(X_test, activation3.outputs)
+# plt.show()
