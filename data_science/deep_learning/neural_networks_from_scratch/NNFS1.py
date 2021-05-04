@@ -815,6 +815,21 @@ class Accuracy_Regression(Accuracy):
         return np.absolute(predictions - y) < self.precision
 
 
+class Accuracy_Categorical(Accuracy):
+    def __init__(self, *, binary=False):
+        # Binary mode
+        self.binary = binary
+
+    def init(self, y):
+        pass
+
+    # compares predictions to the ground truth values
+    def compare(self, predictions, y):
+        if not self.binary and len(y.shape) == 2:
+            y = np.argmax(y, axis=1)
+            return predictions == y
+
+
 # Create data set
 X, y = sine_data()
 
@@ -1084,3 +1099,19 @@ model.train(X, y, epochs=10000, print_every=100)
 # plt.plot(X_test, y_test)
 # plt.plot(X_test, activation3.outputs)
 # plt.show()
+
+
+# HowTallIsEntity
+# Patterns
+# how tall is $Entity
+# how tall is [barack obama]
+
+# Collections
+# People = [Barack obama, michele obama, santiago obama]
+
+# DataOfBirth
+# Patterns
+# when was $Entity born
+
+# Collections
+# people = [Barack obama, michele Obama, Santiago Obama]
