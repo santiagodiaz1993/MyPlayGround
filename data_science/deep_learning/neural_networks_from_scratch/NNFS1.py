@@ -1099,19 +1099,3 @@ model.train(X, y, epochs=10000, print_every=100)
 # plt.plot(X_test, y_test)
 # plt.plot(X_test, activation3.outputs)
 # plt.show()
-
-
-# HowTallIsEntity
-# Patterns
-# how tall is $Entity
-# how tall is [barack obama]
-
-# Collections
-# People = [Barack obama, michele obama, santiago obama]
-
-# DataOfBirth
-# Patterns
-# when was $Entity born
-
-# Collections
-# people = [Barack obama, michele Obama, Santiago Obama]
