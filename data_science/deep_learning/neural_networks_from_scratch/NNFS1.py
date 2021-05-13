@@ -733,15 +733,8 @@ class Model:
             data_loss, regularization_loss = self.loss.calculate(
                 output, y, include_regulatization=True
             )
-            # print("This is data loss")
-
-            # print(data_loss)
-            # print("this is regularization loss")
-            # print(regularization_loss)
 
             loss = data_loss + regularization_loss
-            # print("This is loss")
-            # print(loss)
 
             # Get predictions and calculate an accuracy
             predictions = self.output_layer_activation.predictions(output)
@@ -770,27 +763,27 @@ class Model:
                     + f"lr:{self.optimizer.current_learning_rate}"
                 )
 
-            if validation_data is None:
-                # For better readbility
-                X_val, y_val = validation_data
+        if validation_data is None:
+            # For better readbility
+            X_val, y_val = validation_data
 
-                # Perform the forward pass
-                output = self.forward(X_val)
+            # Perform the forward pass
+            output = self.forward(X_val)
 
-                # Calculate the loss
-                loss = self.loss.calculate(output, y_val)
+            # Calculate the loss
+            loss = self.loss.calculate(output, y_val)
 
-                # Get predictions and calculate an accuracy
-                predictions = self.output_layer_activation.predictions(output)
+            # Get predictions and calculate an accuracy
+            predictions = self.output_layer_activation.predictions(output)
 
-                accuracy = self.accuracy.calculate(predictions, y_val)
+            accuracy = self.accuracy.calculate(predictions, y_val)
 
-                # Print summary
-                print(
-                    f"validation, "
-                    + f"acc: {accuracy:.3f}, "
-                    + f"loss: {loss:.3f}"
-                )
+            # Print summary
+            print(
+                f"validation, "
+                + f"acc: {accuracy:.3f}, "
+                + f"loss: {loss:.3f}"
+            )
 
     # Train the model
     def forward(self, x):
@@ -827,15 +820,10 @@ class Model:
 class Accuracy:
     # Calculates an accuracy given predictions and grount thruths values
     def calculate(self, predictions, y):
-        # Get comparison results
         comparison = self.compare(predictions, y)
-
-        # Calculate an accuracy
 
         accuracy = np.mean(comparison)
 
-        # print(accuracy)
-        # return accuracy
         return accuracy
 
 
@@ -868,7 +856,7 @@ class Accuracy_Categorical(Accuracy):
     def compare(self, predictions, y):
         if not self.binary and len(y.shape) == 2:
             y = np.argmax(y, axis=1)
-            return predictions == y
+        return predictions == y
 
 
 # Create data set
@@ -897,7 +885,7 @@ model.add(Activation_Sigmoid())
 model.set(
     loss=Loss_BinaryCrossentropy(),
     optimizer=Optimizer_Adam(decay=5e-7),
-    accuracy=Accuracy_Categorical(),
+    accuracy=Accuracy_Categorical(binary=True),
 )
 
 
