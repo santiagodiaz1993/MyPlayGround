@@ -1,4 +1,6 @@
 import numpy as np
+import copy
+import pickle
 import nnfs
 from nnfs.datasets import spiral_data
 from nnfs.datasets import sine_data
@@ -66,6 +68,13 @@ class Layer_Dense:
         # Gradient on values
         self.dinputs = np.dot(dvalues, self.weights.T)
 
+    def get_parameters(self):
+        return self.weights, self.biases
+
+    def set_parameters(self, weights, biases):
+        self.weights = weights
+        self.biases = biases
+
 
 class Layer_Dropout:
     def __init__(self, rate):
@@ -98,8 +107,6 @@ class Layer_Input:
 
     # Foward pass
     def forward(self, inputs, training):
-        # jprint("This is when X first gets passed in into input layer")
-        # print(inputs.shape)
         self.output = inputs
 
 
@@ -359,8 +366,7 @@ class Optimizer_RMSprop:
             layer.bias_cache = np.zeros_like(layer.biases)
 
         layer.weight_cache = (
-            self.rho * layer.weight_cache
-            + (1 - self.rho) * layer.dweights ** 2
+            self.rho * layer.weight_cache + (1 - self.rho) * layer.dweights ** 2
         )
         layer.bias_cache = (
             self.rho * layer.bias_cache + (1 - self.rho) * layer.dbiases ** 2
@@ -419,12 +425,10 @@ class Optimizer_Adam:
 
         # Update momentum with current gradients
         layer.weight_momentums = (
-            self.beta_1 * layer.weight_momentums
-            + (1 - self.beta_1) * layer.dweights
+            self.beta_1 * layer.weight_momentums + (1 - self.beta_1) * layer.dweights
         )
         layer.bias_momentums = (
-            self.beta_1 * layer.bias_momentums
-            + (1 - self.beta_1) * layer.dbiases
+            self.beta_1 * layer.bias_momentums + (1 - self.beta_1) * layer.dbiases
         )
 
         # Get corrected momentum
@@ -437,12 +441,10 @@ class Optimizer_Adam:
             1 - self.beta_1 ** (self.iterations + 1)
         )
         layer.weight_cache = (
-            self.beta_2 * layer.weight_cache
-            + (1 - self.beta_2) * layer.dweights ** 2
+            self.beta_2 * layer.weight_cache + (1 - self.beta_2) * layer.dweights ** 2
         )
         layer.bias_cache = (
-            self.beta_2 * layer.bias_cache
-            + (1 - self.beta_2) * layer.dbiases ** 2
+            self.beta_2 * layer.bias_cache + (1 - self.beta_2) * layer.dbiases ** 2
         )
         # Get corrected cache
         weight_cache_corrected = layer.weight_cache / (
@@ -482,17 +484,15 @@ class Loss:
             # L1 regularization - weights
             # calculate only when the factor is greater than 0
             if layer.weights_regularization_l1 > 0:
-                regularization_loss += (
-                    layer.weights_regularization_l1
-                    * np.sum(np.abs(layer.weights))
+                regularization_loss += layer.weights_regularization_l1 * np.sum(
+                    np.abs(layer.weights)
                 )
 
             # L2 regularization - weights
             # calculate only when the factor is greater than 0
             if layer.weights_regularization_l1 > 0:
-                regularization_loss += (
-                    layer.weights_regularization_l2
-                    * np.sum(np.sum(layer.weights * layer.weights))
+                regularization_loss += layer.weights_regularization_l2 * np.sum(
+                    np.sum(layer.weights * layer.weights)
                 )
 
             # L1 regularization - bias
@@ -519,9 +519,6 @@ class Loss:
     # ground truth values
     def calculate(self, output, y, *, include_regulatization=False):
 
-        # print("this is X and y while coming in into calculate")
-        # print(output.shape)
-        # print(y.shape)
         # calculate sample loss
         sample_loss = self.forward(output, y)
 
@@ -535,9 +532,6 @@ class Loss:
         if not include_regulatization:
             return data_loss
 
-        # print("this is y and x coming out of the loss calculate method")
-        # print(data_loss.shape)
-        # print(self.regularization_loss().shape)
         # Return the data and regularization losses
         return data_loss, self.regularization_loss()
 
@@ -566,7 +560,6 @@ class Loss_CategoricalCrossentropy(Loss):
     # forward pass
     def forward(self, y_pred, y_true):
 
-        # print(y_pred)
         # Number of samples in a batch
         samples = len(y_pred)
 
@@ -614,8 +607,7 @@ class Loss_BinaryCrossentropy(Loss):
 
         # Calculate sample wise loss
         sample_losses = -(
-            y_true * np.log(y_pred_clipped)
-            + (1 - y_true) * np.log(1 - y_pred_clipped)
+            y_true * np.log(y_pred_clipped) + (1 - y_true) * np.log(1 - y_pred_clipped)
         )
 
         sample_losses = np.mean(sample_losses, axis=1)
@@ -637,8 +629,7 @@ class Loss_BinaryCrossentropy(Loss):
 
         # Calculate gradient
         self.dinputs = (
-            -(y_true / clipped_dvalues - (1 - y_true) / (1 - clipped_dvalues))
-            / outputs
+            -(y_true / clipped_dvalues - (1 - y_true) / (1 - clipped_dvalues)) / outputs
         )
 
         # Normalize gradients
@@ -701,10 +692,15 @@ class Model:
         self.layers.append(layer)
 
     # Set loss, optimizer and accuracy
-    def set(self, *, loss, optimizer, accuracy):
-        self.loss = loss
-        self.optimizer = optimizer
-        self.accuracy = accuracy
+    def set(self, *, loss=None, optimizer=None, accuracy=None):
+        if loss is not None:
+            self.loss = loss
+
+        if optimizer is not None:
+            self.optimizer = optimizer
+
+        if accuracy is not None:
+            self.accuracy = accuracy
 
     # Finalize the model
     def finalize(self):
@@ -755,6 +751,13 @@ class Model:
                 Activation_Softmax_Loss_CategoricalCrossentropy()
             )
 
+        # Update loss object with trainable layers
+        self.loss.remember_trainable_layers(self.trainable_layers)
+
+        # Update loss object with trainable layers
+        if self.loss is not None:
+            self.loss.remember_trainable_layers(self.trainable_layers)
+
     # Train the model
     def train(
         self,
@@ -767,19 +770,12 @@ class Model:
         validation_data=None,
     ):
 
+        print("accruracy initialized")
         # initialize accuracy object
         self.accuracy.init(y)
 
         # Default value if batch size is not set
         train_steps = 1
-
-        # If theere is a validation data passsed,
-        # set default number of steps for validation as well
-        if validation_data is not None:
-            validation_steps = 1
-
-            # For better readability
-            X_val, y_val = validation_data
 
         # Calculate number of steps
         if batch_size is not None:
@@ -790,14 +786,6 @@ class Model:
             # batch
             if train_steps * batch_size < len(X):
                 train_steps += 1
-
-            if validation_data is not None:
-                validation_steps = len(X_val) // batch_size
-                # Dividing rounds down. If there are some remaining data, but
-                # nor full batch, this wont include it. Add 1 to include this
-                # not full batch
-                if validation_steps * batch_size < len(X_val):
-                    validation_steps += 1
 
         # Main trainning loop
         for epoch in range(1, epochs + 1):
@@ -834,11 +822,10 @@ class Model:
 
                 # This looks like we have the lack of re drop
                 # Get predictions and calculate an accuracy
-                # print(self.output_layer_activation)
                 predictions = self.output_layer_activation.predictions(output)
 
                 # At this point
-                self.accuracy.calculate(predictions, batch_y)
+                accuracy = self.accuracy.calculate(predictions, batch_y)
 
                 # Call backward method on the los
                 # this will set dinputs property that the last
@@ -853,7 +840,7 @@ class Model:
                 self.optimizer.post_update_params()
 
                 # Print a summary
-                if not epoch % print_every:
+                if not step % print_every or step == train_steps - 1:
                     print(
                         f"epoch:{epoch}, "
                         + f"acc: {accuracy:.3f}, "
@@ -880,22 +867,16 @@ class Model:
                 + f"lr: {self.optimizer.current_learning_rate}"
             )
 
-            if validation_data is None:
-                print(validation_data)
+            if validation_data is not None:
                 self.evaluate(*validation_data, batch_size=batch_size)
 
     # Train the model
     def forward(self, x, training):
 
-        # print("This is when X gets first passed in into forward")
-        # $ print(X.shape)
         # Call forward method on the input layer
         # this will set the ouput property that
         # this first layer in "prev" objext is expecting
         self.input_layer.forward(x, training)
-
-        # print("This is X after getting passed through input layer")
-        # print(self.input_layer.forward(x, training))
 
         # Call forward method of every object in a chain
         # Pass output of the previous object as a parameter
@@ -904,11 +885,8 @@ class Model:
 
         # "Layer" is now the last object from the list
         # return is output
-        # print("This is as it comes out of the foward function")
-        # print(layer.output.shape)
         # return layer.output
         # phrint("This is X after getting passed through forward")
-        # print(layer.output.shape)
         return layer.output
 
     # Performs backward pass
@@ -942,9 +920,10 @@ class Model:
             layer.backward(layer.next.dinputs)
 
     def evaluate(self, X_val, y_val, *, batch_size=None):
-        print("The method has been called")
+
         # Default value if batch size is not being set
         validation_steps = 1
+
         # calculate number of steps
         if batch_size is not None:
             validation_steps = len(X_val) // batch_size
@@ -955,8 +934,9 @@ class Model:
             if validation_steps * batch_size < len(X_val):
                 validation_steps += 1
 
-                # Reset accumulated values in loss
-                # and accuracy objects
+        print(self)
+        # Reset accumulated values in loss
+        # and accuracy objects
         self.loss.new_pass()
         self.accuracy.new_pass()
 
@@ -968,6 +948,7 @@ class Model:
                 batch_X = X_val
                 batch_y = y_val
 
+            # otherwise slice a batch
             else:
                 batch_X = X_val[step * batch_size : (step + 1) * batch_size]
                 batch_y = y_val[step * batch_size : (step + 1) * batch_size]
@@ -987,13 +968,74 @@ class Model:
         validation_loss = self.loss.calculate_accumulated()
         validation_accuracy = self.accuracy.calculate_accumulated()
 
-        print("This is right before the printing")
         # Print summary
         print(
             f"validation, "
             + f"acc: {validation_accuracy:.3f}, "
             + f"loss: {validation_loss:.3f}"
         )
+
+    def get_parameters(self):
+
+        # Create a list of parameters
+        parameters = []
+
+        # Iterable trainable layers and get their parameteres
+        for layer in self.trainable_layers:
+            parameters.append(layer.get_parameters())
+
+        return parameters
+
+    def set_parameters(self, parameters):
+
+        # Iterate over the paramters and layers
+        # and update each layers with each set of parameters
+        for parameter_set, layer in zip(parameters, self.trainable_layers):
+            layer.set_parameters(*parameter_set)
+
+    def save_parameters(self, path):
+        # Open a file in the binary-write mode
+        # and save parameters to it
+        with open(path, "wb") as f:
+            pickle.dump(self.get_parameters(), f)
+
+    # Loads the weights and updates a model instance with them
+    def load_parameters(self, path):
+        # Open the file where the parameters are
+        # witht he weights and biases
+        with open(path, "rb") as f:
+            self.set_parameters(pickle.load(f))
+
+    def save(self, path):
+        # Make a deep copy of the current model
+        model = copy.deepcopy(self)
+
+        # Reset accumulated values in loss and accuracy objects
+        model.loss.new_pass()
+        model.accuracy.new_pass()
+
+        # Remove data from input layer
+        # and gradients from the loss object
+        model.input_layer.__dict__.pop("output", None)
+        model.loss.__dict__.pop("dinputs", None)
+
+        # For each layer remove inputs, outputs, and dinputs properties
+        for layer in model.layers:
+            for property in ["inputs", "outputs", "dinputs", "dweights", "dbiases"]:
+                layer.__dict__.pop(property, None)
+
+        with open(path, "wb") as f:
+            pickle.dump(model, f)
+
+    @staticmethod
+    def load(path):
+
+        # Open file in the binary-read mode, load a model
+        with open(path, "rb") as f:
+            model = pickle.load(f)
+
+        # Return Model
+        return model
 
 
 # Common accuracy class
@@ -1057,13 +1099,9 @@ class Accuracy_Categorical(Accuracy):
 
     # compares predictions to the ground truth values
     def compare(self, predictions, y):
-        # print("This is how the predictions are:")
-        # print(predictions.shape)
         if not self.binary and len(y.shape) == 2:
             y = np.argmax(y, axis=1)
 
-        # print(predictions.shape)
-        # print(y.shape)
         return predictions == y
 
 
@@ -1114,323 +1152,8 @@ y = y[keys]
 
 # Scale and reshape smaples
 X = (X.reshape(X.shape[0], -1).astype(np.float32) - 127.5) / 127.5
-X_test = (
-    X_test.reshape(X_test.shape[0], -1).astype(np.float32) - 127.5
-) / 127.5
+X_test = (X_test.reshape(X_test.shape[0], -1).astype(np.float32) - 127.5) / 127.5
 
-# instantiate the model
-model = Model()
-
-# Add layers
-model.add(Layer_Dense(X.shape[1], 128))
-model.add(Activation_ReLu())
-model.add(Layer_Dense(128, 128))
-model.add(Activation_ReLu())
-model.add(Layer_Dense(128, 10))
-model.add(Activation_Softmax())
-
-model.set(
-    loss=Loss_CategoricalCrossentropy(),
-    optimizer=Optimizer_Adam(decay=1e-3),
-    accuracy=Accuracy_Categorical(),
-)
-
-model.finalize()
-
-model.train(
-    X,
-    y,
-    validation_data=(X_test, y_test),
-    epochs=2,
-    batch_size=120,
-    print_every=100,
-)
+model = Model.load("fashion_mnist.model")
 
 model.evaluate(X_test, y_test)
-
-# # Create data set
-
-# X, y = spiral_data(samples=1000, classes=3)
-# X_test, y_test = spiral_data(samples=100, classes=3)
-# # print("This is whent the data is initialized")
-# # print(X.shape)
-# # print(y.shape)
-#
-# # Inner list contains one output (either 0, 1)
-# # Per each output neuron, 1 in this case
-# # y = y.reshape(-1, 1)
-# # y_test = y_test.reshape(-1, 1)
-#
-# # Instant the model
-# model = Model()
-#
-# # Add layers AKA set up the architecture
-# model.add(
-#     Layer_Dense(
-#         2, 512, weights_regularization_l2=5e-4, bias_regularizer_l2=5e-4
-#     )
-# )
-#
-# model.add(Activation_ReLu())
-# model.add(Layer_Dropout(0.1))
-# model.add(Layer_Dense(512, 3))
-# model.add(Activation_Softmax())
-#
-# # Set loss, optimizer, and accuracy objects
-# model.set(
-#     loss=Loss_CategoricalCrossentropy(),
-#     optimizer=Optimizer_Adam(learning_rate=0.05, decay=5e-5),
-#     accuracy=Accuracy_Categorical(),
-# )
-#
-#
-# # Finalize the model.
-# model.finalize()
-#
-# model.train(
-#     X, y, validation_data=(X_test, y_test), epochs=10000, print_every=100
-# )
-#
-#
-# #  Create data set
-# # X, y = spiral_data(samples=100, classes=2)
-# #
-# # # Reshape lables to be a list of lists
-# # # Inner lists contains one ouput (either 0 or 1)
-# # # per each ouput neuron, 1 in this class
-# # y = y.reshape(-1, 1)
-# #
-# # dense1 = Layer_Dense(
-# #     2, 64, weights_regularization_l2=5e-4, bias_regularizer_l2=5e-4
-# # )
-# #
-# activation1 = Activation_ReLu()
-# # create the testing data
-#
-# dense2 = Layer_Dense(64, 1)
-#
-# activation2 = Activation_Sigmoid()
-#
-# loss_function = Loss_BinaryCrossentropy()
-#
-# optimizer = Optimizer_Adam(decay=5e-7)
-#
-#
-# # Trainning in the loop
-# for epoch in range(10001):
-#
-#     # Perform a foward pass of our trainning data through this layer
-#     dense1.forward(X)
-#
-#     # Perform a foward pass through activation function takes the output of
-#     # first dense layer here
-#     activation1.forward(dense1.output)
-#
-#     # Perform a foward pass through the second dense layer takes outputs of
-#     # second layer and reurns loss
-#     dense2.forward(activation1.output)
-#
-#     activation2.forward(dense2.output)
-#
-#     # calculate loss from ouput of activation2 so softmax activation
-#     # print("activation2 and y are both nd.arrays")
-#     # print(type(activation2.output))
-#     # print(type(y))
-#     data_loss = loss_function.calculate(activation2.output, y)
-#
-#     # calculated regularization penalty
-#     regularization_loss = loss_function.regularization_loss(
-#         dense1
-#     ) + loss_function.regularization_loss(dense2)
-#
-#     # Perform a foward pass through the activation/loss function takes the
-#     # ouput of second dense layer here and returns loss
-#     loss = data_loss + regularization_loss
-#
-#     # Calculate accuracy from output of the activation2 and targets
-#     # calculate values along first axis
-#     predictions = (activation2.output > 0.5) * 1
-#     accuracy = np.mean(predictions == y)
-#
-#     # print(type(loss))
-#     # print(type(epoch))
-#     # print(type(regularization_loss))
-#     # print(type(optimizer.current_learning_rate))
-#     # loss2 = {loss: .3f}
-#     if not epoch % 100:
-#         print(
-#             f"epoch: {epoch}, "
-#             + f"acc: {accuracy:.3f}, "
-#             + f"loss: {loss:.3f} ("
-#             + f"data_loss: {data_loss:.3f}, "
-#             + f"reg_loss: {regularization_loss:.3f}), "
-#             + f"lr: {optimizer.current_learning_rate}"
-#         )
-#
-#     # Backward pass
-#     loss_function.backward(activation2.output, y)
-#     activation2.backward(loss_function.dinputs)
-#     dense2.backward(activation2.dinputs)
-#     activation1.backward(dense2.dinputs)
-#     dense1.backward(activation1.dinputs)
-#
-#     # Update the weights and biases
-#     optimizer.pre_update_params()
-#     optimizer.update_params(dense1)
-#     optimizer.update_params(dense2)
-#     optimizer.post_update_params()
-#
-# # Validate model
-# # Create test datasets
-# X_test, y_test = spiral_data(samples=100, classes=2)
-#
-# # Rreshape labels to be a list of lists
-# # Inner list contains one ouput (either 0 or 1)
-# # Per each output neuron, 1 in this case
-# y_test = y_test.reshape(-1, 1)
-#
-# # Perform a foward pass for our testing data through this layer
-# dense1.forward(X_test)
-#
-# # Perform a forward pass through activation function
-# # takes the output of first dense layer here
-# activation1.forward(dense1.output)
-#
-# # Perform a forward pass through second Dense Layer
-# # takes the output of the activation function of first layer as inputs
-# dense2.forward(activation1.output)
-#
-# # Perform a forward pass through activation function
-# # takes the output of second dense layer here
-# activation2.forward(dense2.output)
-#
-# # Calculate the data loss
-# loss = loss_function.calculate(activation2.output, y_test)
-#
-# # Calculate accuracy from output of activation2 and targets
-# # part in brackets returns a binary mask array consisting of
-# # True / False values, multiplying it by 1 changes it into array
-# # of 1s and 0s
-# predictions = (activation2.output > 0.5) * 1
-# accuracy = np.mean(predictions == y_test)
-#
-# print(f"validation, acc: {accuracy: .3f}, loss : {loss: .3f}")
-#
-##############################################################################
-# Regrestion testing
-# X, y = sine_data()
-#
-# # Create Dense Layer with 1 input feature and 64 output values
-# dense1 = Layer_Dense(1, 64)
-#
-# # Create ReLU activation (To be used with Dense Layer ):
-# activation1 = Activation_ReLu()
-#
-# # Create second Dense Layer with 64 input features (as we take ouput
-# # of previous layer here) and 1 output value
-# dense2 = Layer_Dense(64, 64)
-#
-# # Create Linear activation:
-# activation2 = Activation_ReLu()
-#
-# # creating a third layer to add more adaptability
-# dense3 = Layer_Dense(64, 1)
-#
-# activation3 = Activation_Linear()
-#
-# # Create loss function
-# loss_function = Loss_MeanSquaredError()
-#
-# # Create optimizer
-# optimizer = Optimizer_Adam(
-#     learning_rate=0.005, decay=1e-3
-# )  # learning_rate=0.005, decay=1e-3)
-#
-# # Accuracy precision for accuracy calculation
-# # There are no really accuracy factor for regression problem,
-# # but we can simulate/approximate it. Well calculate it by checking how many
-# # values have a difference to their graoudn thruth equivalent less than given
-# # precison.
-# # We'll calculate this precision as a fraction of standar deviation of al the
-# # ground thruth values
-# accurate_precision = np.std(y) / 250
-#
-# # Train in loop
-# for epoch in range(10000):
-#     # Perform a forward pass of our trainning
-#     dense1.forward(X)
-#
-#     # Perform a forward pass through activation function
-#     # takes the ouput of first dense layer here
-#     activation1.forward(dense1.output)
-#
-#     # Perform a forward pass through second dense layer takes ouputs of
-#     # activation  function of first layer as inputs
-#     dense2.forward(activation1.output)
-#
-#     # Perform a foward pass through activation function takes the ouput of
-#     # second dense layer here
-#     activation2.forward(dense2.output)
-#
-#     dense3.forward(activation2.output)
-#
-#     activation3.forward(dense3.output)
-#
-#     # Calculate the data loss
-#     data_loss = loss_function.calculate(activation3.outputs, y)
-#
-#     # Calculate regularization penalty
-#     regularization_loss = (
-#         loss_function.regularization_loss(dense1)
-#         + loss_function.regularization_loss(dense2)
-#         + loss_function.regularization_loss(dense3)
-#     )
-#
-#     # Calculate overall loss
-#     loss = data_loss + regularization_loss
-#
-#     # Calculate accuracy from ouput of activation2 and targets
-#     # to calculate it we're talking absolute difference between prediction and
-#     # ground truth values and compare if difference are lower than given
-#     # precision value
-#     predictions = activation3.outputs
-#     accuracy = np.mean(np.absolute(predictions - y) < accurate_precision)
-#
-#     if not epoch % 100:
-#         print(
-#             f"epoch: {epoch}, "
-#             + f"acc: {accuracy:.3f}, "
-#             + f"loss: {loss:.3f} ("
-#             + f"data_loss: {data_loss:.3f}, "
-#             + f"reg_loss: {regularization_loss:.3f}), "
-#             + f"lr: {optimizer.current_learning_rate}"
-#         )
-#
-#     # Backward pass
-#     loss_function.backward(activation3.outputs, y)
-#     activation3.backward(loss_function.dinputs)
-#     dense3.backward(activation3.dinputs)
-#     activation2.backward(dense3.dinputs)
-#     dense2.backward(activation2.dinputs)
-#     activation1.backward(dense2.dinputs)
-#     dense1.backward(activation1.dinputs)
-#
-#     # Update the weights and biases
-#     optimizer.pre_update_params()
-#     optimizer.update_params(dense1)
-#     optimizer.update_params(dense2)
-#     optimizer.update_params(dense3)
-#     optimizer.post_update_params()
-#
-# X_test, y_test = sine_data()
-#
-# dense1.forward(X_test)
-# activation1.forward(dense1.output)
-# dense2.forward(activation1.output)
-# activation2.forward(dense2.output)
-# dense3.forward(activation2.output)
-# activation3.forward(dense3.output)
-#
-# plt.plot(X_test, y_test)
-# plt.plot(X_test, activation3.outputs)
-# plt.show()

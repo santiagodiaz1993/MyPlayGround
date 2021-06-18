@@ -1,3 +1,6 @@
 # Files to ignore so they do not get uploaded 
 /hacking_scripts
 /data_science/deep_learning/neural_networks_from_scratch/search_system.txt
+/data_science/deep_learning/neural_networks_from_scratch/fashion_mnist_images
+/data_science/deep_learning/neural_networks_from_scratch/fashion_mnist_images.zip
+
