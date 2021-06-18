@@ -770,7 +770,6 @@ class Model:
         validation_data=None,
     ):
 
-        print("accruracy initialized")
         # initialize accuracy object
         self.accuracy.init(y)
 
@@ -934,7 +933,6 @@ class Model:
             if validation_steps * batch_size < len(X_val):
                 validation_steps += 1
 
-        print(self)
         # Reset accumulated values in loss
         # and accuracy objects
         self.loss.new_pass()
@@ -1037,6 +1035,40 @@ class Model:
         # Return Model
         return model
 
+    def predict(self, x, *, batch_size=None):
+        # Default value if batch size is not being set
+        prediction_steps = 1
+
+        # Calculate number of steps
+        if batch_size is not None:
+            prediction_steps = len(X) // batch_size
+            # Deviding rounds down. If there are some remaining
+            # data, but not a full batch, this wont include it
+            # add "1" to include this not full batch
+            if prediction_steps * batch_size < len(X):
+                prediction_steps += 1
+
+        output = []
+
+        for step in range(prediction_steps):
+            # if batch size is not set
+            # train using one step and full data set
+            if batch_size is None:
+                batch_X = x
+
+            # Otherwise slice a batch
+            else:
+                batch_X = X[step * batch_size : (step + 1) * batch_size]
+
+            # Perform the forward pass
+            batch_output = self.forward(batch_X, training=False)
+
+            # Append batch prediction to the list of predictions
+            output.append(batch_output)
+
+        # Stack and return results
+        return np.vstack(output)
+
 
 # Common accuracy class
 class Accuracy:
@@ -1130,6 +1162,20 @@ def load_mnist_dataset(dataset, path):
     return np.array(X), np.array(y).astype("uint8")
 
 
+fashion_mnist_labels = {
+    0: "T-shirt/top",
+    1: "Trouser",
+    2: "Pullover",
+    3: "Dress",
+    4: "Coat",
+    5: "Sandal",
+    6: "Shirt",
+    7: "Sneaker",
+    8: "Bag",
+    9: "Ankle boot",
+}
+
+
 # MNIST dataset (train + test)
 def create_data_mnist(path):
 
@@ -1145,15 +1191,22 @@ def create_data_mnist(path):
 X, y, X_test, y_test = create_data_mnist("fashion_mnist_images")
 
 # Shuffle the trainning dataset
-keys = np.array(range(X.shape[0]))
-np.random.shuffle(keys)
-X = X[keys]
-y = y[keys]
+# keys = np.array(range(X.shape[0]))
+# np.random.shuffle(keys)
+# X = X[keys]
+# y = y[keys]
 
 # Scale and reshape smaples
-X = (X.reshape(X.shape[0], -1).astype(np.float32) - 127.5) / 127.5
+# X = (X.reshape(X.shape[0], -1).astype(np.float32) - 127.5) / 127.5
 X_test = (X_test.reshape(X_test.shape[0], -1).astype(np.float32) - 127.5) / 127.5
 
 model = Model.load("fashion_mnist.model")
 
-model.evaluate(X_test, y_test)
+confidences = model.predict(X_test[:3])
+print(confidences)
+# model.evaluate(X_test, y_test)
+
+predictions = model.output_layer_activation.predictions(confidences)
+
+for prediction in predictions:
+    print(fashion_mnist_labels[prediction])
