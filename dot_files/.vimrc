@@ -32,6 +32,43 @@ call vundle#rc()
 Plugin 'VundleVim/Vundle.vim'
 
 " ============================================================================
+Plugin 'szw/vim-maximizer'
+" Plugin for debugging python
+Plugin 'puremourning/vimspector'
+" vimspector setings for testing. After testing they will be moved to the
+" correct section
+
+fun! GotoWindow(id)
+    call win_gotoid(a:id)
+    MaximizerToggle
+endfun
+
+" Debugger remaps
+nnoremap <leader>m :MaximizerToggle!<CR>
+nnoremap <leader>dd :call vimspector#Launch()<CR>
+nnoremap <leader>dc :call GotoWindow(g:vimspector_session_windows.code)<CR>
+nnoremap <leader>dt :call GotoWindow(g:vimspector_session_windows.tagpage)<CR>
+nnoremap <leader>dv :call GotoWindow(g:vimspector_session_windows.variables)<CR>
+nnoremap <leader>dw :call GotoWindow(g:vimspector_session_windows.watches)<CR>
+nnoremap <leader>ds :call GotoWindow(g:vimspector_session_windows.stack_trace)<CR>
+nnoremap <leader>do :call GotoWindow(g:vimspector_session_windows.output)<CR>
+nnoremap <leader>de :call vimspector#Reset()<CR>
+
+nnoremap <leader>dtcb :call vimspector#CleanLineBreakpoint()<CR>
+
+nmap <leader>dl <Plug>VimspectorStepInto
+nmap <leader>dj <Plug>VimspectorStepOver
+nmap <leader>dk <Plug>VimspectorStepOut
+nmap <leader>d_ <Plug>VimspectorRestart
+nnoremap <leader>d<space> :call vimspector#Continue()<CR>
+
+nmap <leader>drc <Plug>VimspectorRunToCursor
+nmap <leader>dbp <Plug>VimspectorToggleBreakpoint
+nmap <leader>dcbp <Plug>VimspectorToggleConditionalBreakpoint
+
+" <Plug>VimspectorStop
+" <Plug>VimspectorPause
+" <Plug>VimspectorAddFunctionBreakpoint
 " Active plugins
 " You can disable or add new ones here:
 
@@ -40,10 +77,11 @@ Plugin 'junegunn/fzf', { 'do': { -> fzf#install() } }
 Plugin 'junegunn/fzf.vim'
 
 "installation of vim-rooter
-Plugin 'airblade/vim-rooter'
+" Plugin 'airblade/vim-rooter'
 " Plugins from github repos:
 "linting with black
-Plugin 'psf/black'
+Plugin 'psf/black', { 'tag': '19.10b0' }
+"Plugin 'psf/black'
 " asyncronos linting and fixing
 Plugin 'dense-analysis/ale'
 " Better file browser
@@ -179,7 +217,7 @@ set confirm
 set nobackup
 " other settings 
 set langmenu=zh_CN.UTF-8
-set mouse=a
+" set mouse=a
 set whichwrap+=<,>,h,l,[,]
 set background=dark
 set encoding=utf-8
@@ -583,3 +621,15 @@ set rtp+=~/.vim/bundle/fzf
 
 " Mapping for launching fzf quickly
 nmap <C-p> :Files<Cr>
+
+" addig shortcut to run python programs without leaving vim window
+autocmd FileType python map <buffer> <F3> :w<CR>:exec '!python3' shellescape(@%, 1)<CR>
+
+autocmd FileType python imap <buffer> <F3> <esc>:w<CR>:exec '!python3' shellescape(@%, 1)<CR>
+set incsearch
+
+let g:snipMate = { 'snippet_version' : 1 }
+
+autocmd BufWinEnter *.py nmap <silent> <F5>:w<CR>:terminal python3 -m pdb '%:p'<CR>
+
+set colorcolumn=79
