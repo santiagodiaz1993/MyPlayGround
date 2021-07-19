@@ -1188,7 +1188,7 @@ def create_data_mnist(path):
 
 
 # Create dataset
-X, y, X_test, y_test = create_data_mnist("fashion_mnist_images")
+# X, y, X_test, y_test = create_data_mnist("fashion_mnist_images")
 
 # Shuffle the trainning dataset
 # keys = np.array(range(X.shape[0]))
@@ -1198,15 +1198,34 @@ X, y, X_test, y_test = create_data_mnist("fashion_mnist_images")
 
 # Scale and reshape smaples
 # X = (X.reshape(X.shape[0], -1).astype(np.float32) - 127.5) / 127.5
-X_test = (X_test.reshape(X_test.shape[0], -1).astype(np.float32) - 127.5) / 127.5
+# X_test = (X_test.reshape(X_test.shape[0], -1).astype(np.float32) - 127.5) / 127.5
+#
+# model = Model.load("fashion_mnist.model")
+#
+# confidences = model.predict(X_test[:3])
+# print(confidences)
+# # model.evaluate(X_test, y_test)
+#
+# predictions = model.output_layer_activation.predictions(confidences)
+#
+# for prediction in predictions:
+#     print(fashion_mnist_labels[prediction])
+
+image_data = cv2.imread("example_image_pants.png", cv2.IMREAD_GRAYSCALE)
+
+image_data = cv2.resize(image_data, (28, 28))
+
+plt.imshow(image_data, cmap="gray")
+plt.show()
+
+image_data = (image_data.reshape(-1, 1).astype(np.float32) - 127.5) / 127.5
 
 model = Model.load("fashion_mnist.model")
 
-confidences = model.predict(X_test[:3])
-print(confidences)
-# model.evaluate(X_test, y_test)
+confidences = model.predict(image_data)
 
 predictions = model.output_layer_activation.predictions(confidences)
 
-for prediction in predictions:
-    print(fashion_mnist_labels[prediction])
+predictions = fashion_mnist_labels[predictions[0]]
+
+print(predictions)
